@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>녹지 탄소 흡수량 - Pukyong University</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <h2>탄소 대시보드</h2>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="vehicle.html">Vehicle</a>
+      <a href="waste.html">Waste</a>
+      <a href="water.html">Water</a>
+      <a href="greenery.html" class="active">Greenery</a>
+      <a href="power.html">Power</a>
+    </nav>
+  </aside>
+  <header class="header">
+    <h1>녹지 탄소 흡수량</h1>
+    <span style="margin-left:auto;">2025-05-14</span>
+  </header>
+  <main class="main">
+    <div class="card stat-box">
+      <div>총 탄소 흡수량</div>
+      <div style="font-size:2rem;">-38.5 <span style="font-size:1rem;">kg CO₂</span></div>
+    </div>
+    <div class="card stat-box">
+      <div>녹지 면적</div>
+      <div style="font-size:2rem;">12,500 <span style="font-size:1rem;">m²</span></div>
+    </div>
+    <div class="card">
+      <canvas id="greeneryChart"></canvas>
+    </div>
+    <div class="card stat-box">
+      <div>식물 종류별 흡수량</div>
+      <img src="assets/img/greenery-icon.png" alt="녹지 아이콘" style="width:60px;">
+    </div>
+    <div class="card">
+      <canvas id="greeneryChart"></canvas>
+    </div>
+  </main>
+  <script src="js/charts.js"></script>
+</body>
+</html>

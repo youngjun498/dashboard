@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>폐기물 탄소 배출량 - Pukyong University</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <h2>탄소 대시보드</h2>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="vehicle.html">Vehicle</a>
+      <a href="waste.html" class="active">Waste</a>
+      <a href="water.html">Water</a>
+      <a href="greenery.html">Greenery</a>
+      <a href="power.html">Power</a>
+    </nav>
+  </aside>
+  <header class="header">
+    <h1>폐기물 탄소 배출량</h1>
+    <span style="margin-left:auto;">2025-05-14</span>
+  </header>
+  <main class="main">
+    <div class="card stat-box">
+      <div>폐기물 총 배출량</div>
+      <div style="font-size:2rem;">85.3 <span style="font-size:1rem;">kg CO₂</span></div>
+    </div>
+    <div class="card stat-box">
+      <div>재활용률</div>
+      <div style="font-size:2rem;">68.5%</div>
+    </div>
+    <div class="card">
+      <canvas id="wasteChart"></canvas>
+    </div>
+    <div class="card stat-box">
+      <div>폐기물 유형별 비율</div>
+      <img src="assets/img/waste-icon.png" alt="폐기물 아이콘" style="width:60px;">
+    </div>
+  </main>
+  <script src="js/charts.js"></script>
+</body>
+</html>

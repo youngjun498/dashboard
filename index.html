@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>부경대학교 탄소발자국 대시보드</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <style>
+        .sidebar {
+            height: 100vh;
+            width: 280px;
+            position: fixed;
+            z-index: 1;
+            top: 0;
+            left: 0;
+            background-color: #1f2937;
+            overflow-x: hidden;
+            padding-top: 20px;
+        }
+        
+        .main-content {
+            margin-left: 280px;
+            padding: 20px;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- 사이드바 -->
+    <div class="sidebar text-white">
+        <div class="px-6 py-4">
+            <h1 class="text-xl font-bold">부경대학교</h1>
+            <p class="text-sm opacity-80">탄소발자국 대시보드</p>
+        </div>
+        <div class="mt-10">
+            <ul>
+                <li class="px-6 py-3 bg-blue-600">
+                    <a href="index.html" class="flex items-center">
+                        <i class="fas fa-home mr-3"></i>
+                        <span>대시보드</span>
+                    </a>
+                </li>
+                <li class="px-6 py-3 hover:bg-gray-700">
+                    <a href="vehicle.html" class="flex items-center">
+                        <i class="fas fa-car mr-3"></i>
+                        <span>차량</span>
+                    </a>
+                </li>
+                <li class="px-6 py-3 hover:bg-gray-700">
+                    <a href="waste.html" class="flex items-center">
+                        <i class="fas fa-trash mr-3"></i>
+                        <span>폐기물</span>
+                    </a>
+                </li>
+                <li class="px-6 py-3 hover:bg-gray-700">
+                    <a href="water.html" class="flex items-center">
+                        <i class="fas fa-tint mr-3"></i>
+                        <span>물 사용량</span>
+                    </a>
+                </li>
+                <li class="px-6 py-3 hover:bg-gray-700">
+                    <a href="greenery.html" class="flex items-center">
+                        <i class="fas fa-tree mr-3"></i>
+                        <span>녹지</span>
+                    </a>
+                </li>
+                <li class="px-6 py-3 hover:bg-gray-700">
+                    <a href="power.html" class="flex items-center">
+                        <i class="fas fa-bolt mr-3"></i>
+                        <span>전력</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 메인 콘텐츠 -->
+    <div class="main-content">
+        <!-- 헤더 -->
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold">탄소발자국 종합 현황</h1>
+            <div class="flex items-center">
+                <div class="relative mr-4">
+                    <select class="bg-white border rounded-md px-4 py-2 pr-8 appearance-none focus:outline-none">
+                        <option>2025년</option>
+                        <option>2024년</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+                <button class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                    <i class="fas fa-download mr-2"></i>보고서 다운로드
+                </button>
+            </div>
+        </div>
+
+        <!-- 통계 카드 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <div class="card stat-card bg-blue-500 text-white">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm opacity-80">총 탄소배출량</p>
+                        <h2 class="text-2xl font-bold">1,245 tCO₂</h2>
+                        <p class="text-sm mt-2"><span class="text-red-300">↑ 5.2%</span> 전년 대비</p>
+                    </div>
+                    <div class="bg-blue-400 p-3 rounded-full">
+                        <i class="fas fa-chart-line text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card stat-card bg-green-500 text-white">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm opacity-80">녹지 탄소흡수량</p>
+                        <h2 class="text-2xl font-bold">243 tCO₂</h2>
+                        <p class="text-sm mt-2"><span class="text-green-300">↑ 2.1%</span> 전년 대비</p>
+                    </div>
+                    <div class="bg-green-400 p-3 rounded-full">
+                        <i class="fas fa-tree text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card stat-card bg-yellow-500 text-white">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm opacity-80">순 배출량</p>
+                        <h2 class="text-2xl font-bold">1,002 tCO₂</h2>
+                        <p class="text-sm mt-2"><span class="text-red-300">↑ 5.9%</span> 전년 대비</p>
+                    </div>
+                    <div class="bg-yellow-400 p-3 rounded-full">
+                        <i class="fas fa-balance-scale text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card stat-card bg-purple-500 text-white">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm opacity-80">1인당 배출량</p>
+                        <h2 class="text-2xl font-bold">0.78 tCO₂</h2>
+                        <p class="text-sm mt-2"><span class="text-green-300">↓ 1.3%</span> 전년 대비</p>
+                    </div>
+                    <div class="bg-purple-400 p-3 rounded-full">
+                        <i class="fas fa-user text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 첫 번째 차트 행 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="card">
+                <h3 class="text-lg font-semibold mb-4">분야별 탄소 배출량</h3>
+                <div class="h-64">
+                    <canvas id="emissionsByCategory"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="text-lg font-semibold mb-4">월별 배출 추이</h3>
+                <div class="h-64">
+                    <canvas id="monthlyEmissions"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 두 번째 차트 행 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="card">
+                <h3 class="text-lg font-semibold mb-4">캠퍼스 위치별 배출량</h3>
+                <div class="h-64">
+                    <canvas id="campusEmissions"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="text-lg font-semibold mb-4">배출 감소 목표 대비 현황</h3>
+                <div class="h-64">
+                    <canvas id="reductionTarget"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 활동 및 알림 -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="card lg:col-span-2">
+                <h3 class="text-lg font-semibold mb-4">최근 활동</h3>
+                <div class="space-y-4">
+                    <div class="flex items-start">
+                        <div class="bg-blue-100 p-2 rounded-full mr-3">
+                            <i class="fas fa-bolt text-blue-600"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium">전력 사용량 급증</p>
+                            <p class="text-sm text-gray-600">공학관 2동 전력 사용량이 전주 대비 15% 증가했습니다.</p>
+                            <p class="text-xs text-gray-500 mt-1">3시간 전</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="bg-green-100 p-2 rounded-full mr-3">
+                            <i class="fas fa-tree text-green-600"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium">녹지 관리 완료</p>
+                            <p class="text-sm text-gray-600">캠퍼스 내 30그루의 나무 추가 식재 작업이 완료되었습니다.</p>
+                            <p class="text-xs text-gray-500 mt-1">어제</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="bg-red-100 p-2 rounded-full mr-3">
+                            <i class="fas fa-trash text-red-600"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium">폐기물 증가</p>
+                            <p class="text-sm text-gray-600">학생회관 주변 플라스틱 폐기물이 20% 증가했습니다.</p>
+                            <p class="text-xs text-gray-500 mt-1">2일 전</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="text-lg font-semibold mb-4">최적화 제안</h3>
+                <div class="space-y-3">
+                    <div class="bg-blue-50 p-3 rounded-lg">
+                        <p class="font-medium text-blue-800">전력 사용량 최적화</p>
+                        <p class="text-sm text-gray-600">공학관 LED 조명 교체 시 연간 45 tCO₂ 감축 가능</p>
+                    </div>
+                    <div class="bg-green-50 p-3 rounded-lg">
+                        <p class="font-medium text-green-800">추가 녹지 조성</p>
+                        <p class="text-sm text-gray-600">인문관 옥상 정원 조성 시 연간 12 tCO₂ 흡수 가능</p>
+                    </div>
+                    <div class="bg-yellow-50 p-3 rounded-lg">
+                        <p class="font-medium text-yellow-800">대중교통 이용 장려</p>
+                        <p class="text-sm text-gray-600">통학버스 운영 시 연간 78 tCO₂ 감축 가능</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 분야별 탄소 배출량 차트
+        const categoryCtx = document.getElementById('emissionsByCategory').getContext('2d');
+        const categoryChart = new Chart(categoryCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['전력', '차량', '폐기물', '물 사용량', '기타'],
+                datasets: [{
+                    data: [560, 320, 180, 120, 65],
+                    backgroundColor: [
+                        '#3b82f6', // 파랑
+                        '#ef4444', // 빨강
+                        '#f59e0b', // 주황
+                        '#06b6d4', // 청록
+                        '#8b5cf6'  // 보라
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    }
+                }
+            }
+        });
+
+        // 월별 배출 추이 차트
+        const monthlyCtx = document.getElementById('monthlyEmissions').getContext('2d');
+        const monthlyChart = new Chart(monthlyCtx, {
+            type: 'line',
+            data: {
+                labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
+                datasets: [{
+                    label: '총 배출량 (tCO₂)',
+                    data: [105, 98, 102, 110, 125, 130, 132, 128, 115, 108, 112, 122],
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 90
+                    }
+                }
+            }
+        });
+
+        // 캠퍼스 위치별 배출량 차트
+        const campusCtx = document.getElementById('campusEmissions').getContext('2d');
+        const campusChart = new Chart(campusCtx, {
+            type: 'bar',
+            data: {
+                labels: ['대연캠퍼스', '용당캠퍼스', '충무캠퍼스', '행정동', '학생회관', '도서관'],
+                datasets: [{
+                    label: '배출량 (tCO₂)',
+                    data: [420, 280, 195, 150, 110, 90],
+                    backgroundColor: '#10b981',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // 배출 감소 목표 대비 현황 차트
+        const targetCtx = document.getElementById('reductionTarget').getContext('2d');
+        const targetChart = new Chart(targetCtx, {
+            type: 'line',
+            data: {
+                labels: ['2020', '2021', '2022', '2023', '2024', '2025', '2026', '2027', '2028', '2029', '2030'],
+                datasets: [
+                    {
+                        label: '실제 배출량',
+                        data: [1450, 1380, 1320, 1285, 1245, null, null, null, null, null, null],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: false,
+                        tension: 0.1
+                    },
+                    {
+                        label: '목표 배출량',
+                        data: [1450, 1380, 1310, 1240, 1170, 1100, 1030, 960, 890, 820, 750],
+                        borderColor: '#ef4444',
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 700
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

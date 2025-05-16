@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>전력 탄소 배출량 - Pukyong University</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/power.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <h2>탄소 대시보드</h2>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="vehicle.html">Vehicle</a>
+      <a href="waste.html">Waste</a>
+      <a href="water.html">Water</a>
+      <a href="greenery.html">Greenery</a>
+      <a href="power.html" class="active">Power</a>
+    </nav>
+  </aside>
+  <header class="header">
+    <h1>전력 탄소 배출량</h1>
+    <div class="month-selector">
+      <button id="prevMonth">&lt;</button>
+      <span id="currentMonth">2025년 5월</span>
+      <button id="nextMonth">&gt;</button>
+    </div>
+    <span style="margin-left:auto;">2025-05-14</span>
+  </header>
+  <main class="main">
+    <div class="card stat-box">
+      <div>전력 총 배출량</div>
+      <div style="font-size:2rem;">150.8 <span style="font-size:1rem;">kg CO₂</span></div>
+    </div>
+    <div class="card stat-box">
+      <div>전력 절약률</div>
+      <div style="font-size:2rem;">25.3%</div>
+    </div>
+    <div class="card" style="height: 300px;">
+      <div id="buildingHeatmap"></div>
+      <div id="tooltip" class="tooltip">
+        <h3 id="tooltipTitle"></h3>
+        <p id="tooltipContent"></p>
+      </div>
+    </div>
+    <div class="card">
+      <canvas id="powerChart"></canvas>
+    </div>
+  </main>
+  <script src="js/power.js"></script>
+</body>
+</html>
