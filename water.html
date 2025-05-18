@@ -1,45 +1,515 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>수자원 탄소 배출량 - Pukyong University</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>부경대학교 탄소발자국 대시보드 - 물</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <style>
+        .sidebar {
+            height: 100vh;
+            width: 280px;
+            position: fixed;
+            z-index: 1;
+            top: 0;
+            left: 0;
+            background-color: #1f2937;
+            overflow-x: hidden;
+            padding-top: 20px;
+        }
+        
+        .main-content {
+            margin-left: 280px;
+            padding: 20px;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .summary-cards {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .summary-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 32%;
+            display: flex;
+            align-items: center;
+        }
+        
+        .summary-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+        
+        .green-icon {
+            background-color: #4ade80;
+        }
+        
+        .blue-icon {
+            background-color: #3b82f6;
+        }
+        
+        .red-icon {
+            background-color: #ef4444;
+        }
+        
+        .summary-text h3 {
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-bottom: 5px;
+        }
+        
+        .summary-text p {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 0;
+        }
+    </style>
 </head>
-<body>
-  <aside class="sidebar">
-    <h2>탄소 대시보드</h2>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="vehicle.html">Vehicle</a>
-      <a href="waste.html">Waste</a>
-      <a href="water.html" class="active">Water</a>
-      <a href="greenery.html">Greenery</a>
-      <a href="power.html">Power</a>
-    </nav>
-  </aside>
-  <header class="header">
-    <h1>수자원 탄소 배출량</h1>
-    <span style="margin-left:auto;">2025-05-14</span>
-  </header>
-  <main class="main">
-    <div class="card stat-box">
-      <div>수자원 총 배출량</div>
-      <div style="font-size:2rem;">45.8 <span style="font-size:1rem;">kg CO₂</span></div>
+<body class="bg-gray-100">
+    <!-- 사이드바 -->
+    <div class="sidebar text-white">
+        <div class="px-6 py-4">
+            <h1 class="text-xl font-bold">부경대학교</h1>
+            <p class="text-sm opacity-80">탄소발자국 대시보드</p>
+        </div>
+        <div class="mt-10">
+            <ul>
+                <li class="px-6 py-3 hover:bg-gray-700">
+                    <a href="index.html" class="flex items-center">
+                        <i class="fas fa-home mr-3"></i>
+                        <span>대시보드</span>
+                    </a>
+                </li>
+                <li class="px-6 py-3 hover:bg-gray-700">
+                    <a href="vehicle.html" class="flex items-center">
+                        <i class="fas fa-car mr-3"></i>
+                        <span>차량</span>
+                    </a>
+                </li>
+                <li class="px-6 py-3 hover:bg-gray-700">
+                    <a href="waste.html" class="flex items-center">
+                        <i class="fas fa-trash mr-3"></i>
+                        <span>폐기물</span>
+                    </a>
+                </li>
+                <li class="px-6 py-3 bg-blue-600">
+                    <a href="water.html" class="flex items-center">
+                        <i class="fas fa-tint mr-3"></i>
+                        <span>물</span>
+                    </a>
+                </li>
+                <li class="px-6 py-3 hover:bg-gray-700">
+                    <a href="greenery.html" class="flex items-center">
+                        <i class="fas fa-tree mr-3"></i>
+                        <span>녹지</span>
+                    </a>
+                </li>
+                <li class="px-6 py-3 hover:bg-gray-700">
+                    <a href="power.html" class="flex items-center">
+                        <i class="fas fa-bolt mr-3"></i>
+                        <span>전력</span>
+                    </a>
+                </li>
+                <li class="px-6 py-3 hover:bg-gray-700">
+                    <a href="MACC.html" class="flex items-center">
+                        <i class="fas fa-chart-line mr-3"></i>
+                        <span>MACC</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
     </div>
-    <div class="card stat-box">
-      <div>수자원 절약률</div>
-      <div style="font-size:2rem;">32.7%</div>
+
+    <!-- 메인 콘텐츠 -->
+    <div class="main-content">
+        <!-- 헤더 -->
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold">물</h1>
+            <div class="flex items-center">
+                <div class="relative mr-4">
+                    <select class="bg-white border rounded-md px-4 py-2 pr-8 appearance-none focus:outline-none">
+                        <option>2025년</option>
+                        <option>2024년</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+                <button class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                    <i class="fas fa-download mr-2"></i>보고서 다운로드
+                </button>
+            </div>
+        </div>
+
+        <!-- 요약 정보 카드 -->
+        <div class="summary-section mb-6">
+            <p class="text-gray-500 mb-2">Summary</p>
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <div class="summary-icon green-icon">
+                        <i class="fas fa-tint text-white"></i>
+                    </div>
+                    <div class="summary-text">
+                        <h3>2024 총 사용량</h3>
+                        <p>1,234 kg</p>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon blue-icon">
+                        <i class="fas fa-cloud text-white"></i>
+                    </div>
+                    <div class="summary-text">
+                        <h3>월평균 탄소배출량</h3>
+                        <p>1.23 tCO₂eq</p>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon red-icon">
+                        <i class="fas fa-calendar-alt text-white"></i>
+                    </div>
+                    <div class="summary-text">
+                        <h3>물 최고 사용달</h3>
+                        <p>12월</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 차트 컨테이너 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- 월별 물 사용 추이 차트 -->
+            <div class="card">
+                <h3 class="text-lg font-semibold mb-4">월별 물 사용 추이</h3>
+                <div class="h-64">
+                    <canvas id="monthlyWaterUsage"></canvas>
+                </div>
+            </div>
+            
+            <!-- 월별 탄소 배출량 차트 -->
+            <div class="card">
+                <h3 class="text-lg font-semibold mb-4">월별 탄소 배출량</h3>
+                <div class="h-64">
+                    <canvas id="monthlyCarbonEmissions"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 통계 카드 섹션 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <div class="card stat-card bg-blue-500 text-black">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm opacity-80">연간 물 사용량</p>
+                        <h2 class="text-2xl font-bold">35,780 m³</h2>
+                        <p class="text-sm mt-2"><span class="text-red-300">↑ 3.8%</span> 전년 대비</p>
+                    </div>
+                    <div class="bg-blue-400 p-3 rounded-full">
+                        <i class="fas fa-tint text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card stat-card bg-cyan-500 text-black">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm opacity-80">탄소 배출량</p>
+                        <h2 class="text-2xl font-bold">5.28 tCO₂</h2>
+                        <p class="text-sm mt-2"><span class="text-red-300">↑ 3.8%</span> 전년 대비</p>
+                    </div>
+                    <div class="bg-cyan-400 p-3 rounded-full">
+                        <i class="fas fa-cloud text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card stat-card bg-teal-500 text-black">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm opacity-80">일일 평균 사용량</p>
+                        <h2 class="text-2xl font-bold">98 m³</h2>
+                        <p class="text-sm mt-2"><span class="text-green-300">↓ 1.5%</span> 전월 대비</p>
+                    </div>
+                    <div class="bg-teal-400 p-3 rounded-full">
+                        <i class="fas fa-calendar-day text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card stat-card bg-green-500 text-black">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm opacity-80">1인당 사용량</p>
+                        <h2 class="text-2xl font-bold">12.5 m³</h2>
+                        <p class="text-sm mt-2"><span class="text-green-300">↓ 2.3%</span> 전년 대비</p>
+                    </div>
+                    <div class="bg-green-400 p-3 rounded-full">
+                        <i class="fas fa-user text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 세 번째 행 - 물 절약 현황 및 제안 -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="card lg:col-span-2">
+                <h3 class="text-lg font-semibold mb-4">물 절약 목표 진행 현황</h3>
+                <div class="space-y-5">
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="text-sm font-medium">연간 총 사용량 감축 목표</span>
+                            <span class="text-sm font-medium">70%</span>
+                        </div>
+                        <div class="bg-gray-200 h-2 rounded-full">
+                            <div class="bg-blue-500 h-2 rounded-full" style="width: 70%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="text-sm font-medium">빗물 재활용 시스템 도입</span>
+                            <span class="text-sm font-medium">45%</span>
+                        </div>
+                        <div class="bg-gray-200 h-2 rounded-full">
+                            <div class="bg-green-500 h-2 rounded-full" style="width: 45%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="text-sm font-medium">물 절약형 설비 교체</span>
+                            <span class="text-sm font-medium">85%</span>
+                        </div>
+                        <div class="bg-gray-200 h-2 rounded-full">
+                            <div class="bg-teal-500 h-2 rounded-full" style="width: 85%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="text-sm font-medium">누수 감지 및 수리</span>
+                            <span class="text-sm font-medium">60%</span>
+                        </div>
+                        <div class="bg-gray-200 h-2 rounded-full">
+                            <div class="bg-purple-500 h-2 rounded-full" style="width: 60%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <h4 class="font-medium mb-2">최근 물 사용 알림</h4>
+                    <div class="space-y-3">
+                        <div class="flex items-start">
+                            <div class="bg-blue-100 p-2 rounded-full mr-3">
+                                <i class="fas fa-exclamation-triangle text-blue-600"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium">학생회관 누수 의심</p>
+                                <p class="text-sm text-gray-600">학생회관에서 비정상적인 물 사용량 증가가 감지되었습니다.</p>
+                                <p class="text-xs text-gray-500 mt-1">2시간 전</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="bg-green-100 p-2 rounded-full mr-3">
+                                <i class="fas fa-check text-green-600"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium">공학관 물 사용량 감소</p>
+                                <p class="text-sm text-gray-600">공학관의 물 사용량이 지난 달 대비 15% 감소했습니다.</p>
+                                <p class="text-xs text-gray-500 mt-1">어제</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="text-lg font-semibold mb-4">물 절약 제안</h3>
+                <div class="space-y-3">
+                    <div class="bg-blue-50 p-3 rounded-lg">
+                        <p class="font-medium text-blue-800">빗물 재활용 시스템</p>
+                        <p class="text-sm text-gray-600">옥상 빗물 수집 시스템 설치 시 연간 5,200m³ 절약 가능</p>
+                    </div>
+                    <div class="bg-teal-50 p-3 rounded-lg">
+                        <p class="font-medium text-teal-800">절수형 설비 교체</p>
+                        <p class="text-sm text-gray-600">화장실 절수형 설비 교체 시 연간 3,800m³ 절약 가능</p>
+                    </div>
+                    <div class="bg-cyan-50 p-3 rounded-lg">
+                        <p class="font-medium text-cyan-800">스마트 물 관리 시스템</p>
+                        <p class="text-sm text-gray-600">IoT 기반 실시간 모니터링 도입 시 연간 15% 절약 가능</p>
+                    </div>
+                    <div class="bg-green-50 p-3 rounded-lg">
+                        <p class="font-medium text-green-800">절수 캠페인</p>
+                        <p class="text-sm text-gray-600">구성원 참여형 물 절약 캠페인 시 연간 5% 절약 가능</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="card">
-      <canvas id="waterChart"></canvas>
-    </div>
-    <div class="card stat-box">
-      <div>건물별 수자원 사용량</div>
-      <img src="assets/img/water-icon.png" alt="수자원 아이콘" style="width:60px;">
-    </div>
-  </main>
-  <script src="js/charts.js"></script>
+
+    <script>
+        // 월별 물 사용 추이 차트
+        const waterUsageCtx = document.getElementById('monthlyWaterUsage').getContext('2d');
+        const waterUsageChart = new Chart(waterUsageCtx, {
+            type: 'line',
+            data: {
+                labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
+                datasets: [{
+                    label: '월별 물 사용량(L)',
+                    data: [4200, 4800, 4100, 3700, 4300, 3500, 4000, 3500, 4200, 4600, 5100, 6100],
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 0,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.raw.toLocaleString()}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // 월별 탄소 배출량 차트
+        const carbonEmissionsCtx = document.getElementById('monthlyCarbonEmissions').getContext('2d');
+        const carbonEmissionsChart = new Chart(carbonEmissionsCtx, {
+            type: 'line',
+            data: {
+                labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
+                datasets: [{
+                    label: '월별 탄소 배출량(tCO₂eq)',
+                    data: [60, 75, 80, 55, 70, 55, 30, 30, 60, 75, 85, 90],
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 0,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.raw.toLocaleString()}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // 백엔드 데이터를 불러오는 함수 (향후 구현)
+        async function fetchWaterData() {
+            try {
+                // API 호출하여 데이터 불러오기
+                const response = await fetch('/api/water/data');
+                const data = await response.json();
+                
+                // 차트 데이터 업데이트
+                updateWaterUsageChart(data.monthlyUsage);
+                updateCarbonEmissionsChart(data.monthlyEmissions);
+                
+                // 통계 카드 데이터 업데이트
+                updateStatistics(data.statistics);
+            } catch (error) {
+                console.error('데이터 로드 실패:', error);
+            }
+        }
+
+        // 물 사용량 차트 업데이트 함수
+        function updateWaterUsageChart(monthlyData) {
+            waterUsageChart.data.datasets[0].data = monthlyData;
+            waterUsageChart.update();
+        }
+
+        // 탄소 배출량 차트 업데이트 함수
+        function updateCarbonEmissionsChart(emissionsData) {
+            carbonEmissionsChart.data.datasets[0].data = emissionsData;
+            carbonEmissionsChart.update();
+        }
+
+        // 통계 카드 업데이트 함수
+        function updateStatistics(statistics) {
+            // 요약 카드 업데이트
+            document.querySelector('.summary-cards .summary-card:nth-child(1) .summary-text p').textContent = 
+                `${statistics.totalUsage.toLocaleString()} kg`;
+            document.querySelector('.summary-cards .summary-card:nth-child(2) .summary-text p').textContent = 
+                `${statistics.avgEmission.toLocaleString()} tCO₂eq`;
+            document.querySelector('.summary-cards .summary-card:nth-child(3) .summary-text p').textContent = 
+                `${statistics.peakMonth}월`;
+            
+            // 통계 카드 업데이트
+            document.querySelector('.stat-card:nth-child(1) h2').textContent = 
+                `${statistics.annualUsage.toLocaleString()} m³`;
+            document.querySelector('.stat-card:nth-child(2) h2').textContent = 
+                `${statistics.totalEmission.toLocaleString()} tCO₂`;
+            document.querySelector('.stat-card:nth-child(3) h2').textContent = 
+                `${statistics.dailyAvg.toLocaleString()} m³`;
+            document.querySelector('.stat-card:nth-child(4) h2').textContent = 
+                `${statistics.perPersonUsage.toLocaleString()} m³`;
+        }
+
+        // 페이지 로드 시 초기 데이터 가져오기 (실제 API 연결 시 활성화)
+        // document.addEventListener('DOMContentLoaded', fetchWaterData);
+    </script>
 </body>
 </html>

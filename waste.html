@@ -1,45 +1,400 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>폐기물 탄소 배출량 - Pukyong University</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>부경대학교 탄소발자국 대시보드 - 폐기물</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <style>
+        .sidebar {
+            height: 100vh;
+            width: 280px;
+            position: fixed;
+            z-index: 1;
+            top: 0;
+            left: 0;
+            background-color: #1f2937;
+            overflow-x: hidden;
+            padding-top: 20px;
+        }
+        
+        .main-content {
+            margin-left: 280px;
+            padding: 20px;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .doughnut-container {
+            position: relative;
+        }
+
+        .doughnut-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+    </style>
 </head>
-<body>
-  <aside class="sidebar">
-    <h2>탄소 대시보드</h2>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="vehicle.html">Vehicle</a>
-      <a href="waste.html" class="active">Waste</a>
-      <a href="water.html">Water</a>
-      <a href="greenery.html">Greenery</a>
-      <a href="power.html">Power</a>
-    </nav>
-  </aside>
-  <header class="header">
-    <h1>폐기물 탄소 배출량</h1>
-    <span style="margin-left:auto;">2025-05-14</span>
-  </header>
-  <main class="main">
-    <div class="card stat-box">
-      <div>폐기물 총 배출량</div>
-      <div style="font-size:2rem;">85.3 <span style="font-size:1rem;">kg CO₂</span></div>
+<body class="bg-gray-100">
+    <!-- 사이드바 -->
+    <div class="sidebar text-white">
+        <div class="px-6 py-4">
+            <h1 class="text-xl font-bold">부경대학교</h1>
+            <p class="text-sm opacity-80">탄소발자국 대시보드</p>
+        </div>
+        <div class="mt-10">
+            <ul>
+                <li class="px-6 py-3 hover:bg-gray-700">
+                    <a href="index.html" class="flex items-center">
+                        <i class="fas fa-home mr-3"></i>
+                        <span>대시보드</span>
+                    </a>
+                </li>
+                <li class="px-6 py-3 hover:bg-gray-700">
+                    <a href="vehicle.html" class="flex items-center">
+                        <i class="fas fa-car mr-3"></i>
+                        <span>차량</span>
+                    </a>
+                </li>
+                <li class="px-6 py-3 bg-blue-600">
+                    <a href="waste.html" class="flex items-center">
+                        <i class="fas fa-trash mr-3"></i>
+                        <span>폐기물</span>
+                    </a>
+                </li>
+                <li class="px-6 py-3 hover:bg-gray-700">
+                    <a href="water.html" class="flex items-center">
+                        <i class="fas fa-tint mr-3"></i>
+                        <span>물</span>
+                    </a>
+                </li>
+                <li class="px-6 py-3 hover:bg-gray-700">
+                    <a href="greenery.html" class="flex items-center">
+                        <i class="fas fa-tree mr-3"></i>
+                        <span>녹지</span>
+                    </a>
+                </li>
+                <li class="px-6 py-3 hover:bg-gray-700">
+                    <a href="power.html" class="flex items-center">
+                        <i class="fas fa-bolt mr-3"></i>
+                        <span>전력</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
     </div>
-    <div class="card stat-box">
-      <div>재활용률</div>
-      <div style="font-size:2rem;">68.5%</div>
+
+    <!-- 메인 콘텐츠 -->
+    <div class="main-content">
+        <!-- 헤더 -->
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold">폐기물 탄소발자국 현황</h1>
+            <div class="flex items-center">
+                <div class="relative mr-4">
+                    <select class="bg-white border rounded-md px-4 py-2 pr-8 appearance-none focus:outline-none">
+                        <option>2025년</option>
+                        <option>2024년</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+                <button class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                    <i class="fas fa-download mr-2"></i>보고서 다운로드
+                </button>
+            </div>
+        </div>
+
+        <!-- 통계 카드 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <div class="card stat-card bg-red-500 text-black">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm opacity-80">총 폐기물 배출량</p>
+                        <h2 class="text-2xl font-bold">180 tCO₂</h2>
+                        <p class="text-sm mt-2"><span class="text-red-300">↑ 4.1%</span> 전년 대비</p>
+                    </div>
+                    <div class="bg-red-400 p-3 rounded-full">
+                        <i class="fas fa-trash text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card stat-card bg-orange-500 text-black">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm opacity-80">1인당 폐기물 배출량</p>
+                        <h2 class="text-2xl font-bold">0.11 tCO₂</h2>
+                        <p class="text-sm mt-2"><span class="text-red-300">↑ 2.8%</span> 전년 대비</p>
+                    </div>
+                    <div class="bg-orange-400 p-3 rounded-full">
+                        <i class="fas fa-user text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card stat-card bg-yellow-500 text-black">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm opacity-80">재활용률</p>
+                        <h2 class="text-2xl font-bold">45.3%</h2>
+                        <p class="text-sm mt-2"><span class="text-green-300">↑ 3.2%</span> 전년 대비</p>
+                    </div>
+                    <div class="bg-yellow-400 p-3 rounded-full">
+                        <i class="fas fa-recycle text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card stat-card bg-blue-500 text-black">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm opacity-80">폐기물 처리 비용</p>
+                        <h2 class="text-2xl font-bold">₩48.2M</h2>
+                        <p class="text-sm mt-2"><span class="text-red-300">↑ 5.7%</span> 전년 대비</p>
+                    </div>
+                    <div class="bg-blue-400 p-3 rounded-full">
+                        <i class="fas fa-won-sign text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 첫 번째 차트 행 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="card">
+                <h3 class="text-lg font-semibold mb-4">폐기물 유형별 배출량</h3>
+                <div class="h-64 doughnut-container">
+                    <canvas id="wasteByType"></canvas>
+                    <div class="doughnut-center">
+                        <p class="text-sm text-gray-600">총 배출량</p>
+                        <p class="text-2xl font-bold">180 tCO₂</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="text-lg font-semibold mb-4">월별 폐기물 배출량 추이</h3>
+                <div class="h-64">
+                    <canvas id="monthlyWaste"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 두 번째 차트 행 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="card">
+                <h3 class="text-lg font-semibold mb-4">캠퍼스별 폐기물 배출 현황</h3>
+                <div class="h-64">
+                    <canvas id="campusWasteComparison"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="text-lg font-semibold mb-4">폐기물 처리 방법별 비율</h3>
+                <div class="h-64">
+                    <canvas id="disposalMethods"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 활동 및 알림 -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="card lg:col-span-2">
+                <h3 class="text-lg font-semibold mb-4">폐기물 관련 최근 활동</h3>
+                <div class="space-y-4">
+                    <div class="flex items-start">
+                        <div class="bg-red-100 p-2 rounded-full mr-3">
+                            <i class="fas fa-exclamation-triangle text-red-600"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium">지정폐기물 증가</p>
+                            <p class="text-sm text-gray-600">이공계 실험실 지정폐기물 배출량이 전월 대비 12% 증가했습니다.</p>
+                            <p class="text-xs text-gray-500 mt-1">2일 전</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="bg-green-100 p-2 rounded-full mr-3">
+                            <i class="fas fa-recycle text-green-600"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium">재활용 분리수거 개선</p>
+                            <p class="text-sm text-gray-600">학생회관 주변 분리수거함 10개 추가 설치 완료</p>
+                            <p class="text-xs text-gray-500 mt-1">1주일 전</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="bg-blue-100 p-2 rounded-full mr-3">
+                            <i class="fas fa-clipboard-list text-blue-600"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium">폐기물 감축 캠페인</p>
+                            <p class="text-sm text-gray-600">일회용품 줄이기 캠페인 시작 (5월 16일 ~ 6월 15일)</p>
+                            <p class="text-xs text-gray-500 mt-1">오늘</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="text-lg font-semibold mb-4">폐기물 감축 제안</h3>
+                <div class="space-y-3">
+                    <div class="bg-green-50 p-3 rounded-lg">
+                        <p class="font-medium text-green-800">음식물 쓰레기 감량</p>
+                        <p class="text-sm text-gray-600">식당 음식물 쓰레기 30% 감량 시 연간 15 tCO₂ 감축 가능</p>
+                    </div>
+                    <div class="bg-blue-50 p-3 rounded-lg">
+                        <p class="font-medium text-blue-800">종이 사용 최소화</p>
+                        <p class="text-sm text-gray-600">종이 없는 행정시스템 적용 시 연간 8 tCO₂ 감축 가능</p>
+                    </div>
+                    <div class="bg-yellow-50 p-3 rounded-lg">
+                        <p class="font-medium text-yellow-800">플라스틱 사용 저감</p>
+                        <p class="text-sm text-gray-600">일회용 플라스틱 사용 50% 감소 시 연간 12 tCO₂ 감축 가능</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="card">
-      <canvas id="wasteChart"></canvas>
-    </div>
-    <div class="card stat-box">
-      <div>폐기물 유형별 비율</div>
-      <img src="assets/img/waste-icon.png" alt="폐기물 아이콘" style="width:60px;">
-    </div>
-  </main>
-  <script src="js/charts.js"></script>
+
+    <script>
+        // 폐기물 유형별 배출량 도넛 차트
+        const wasteTypeCtx = document.getElementById('wasteByType').getContext('2d');
+        const wasteTypeChart = new Chart(wasteTypeCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['일반 생활폐기물', '플라스틱', '종이/종이팩', '유리', '금속', '지정폐기물', '의료폐기물'],
+                datasets: [{
+                    data: [65, 45, 30, 12, 8, 15, 5],
+                    backgroundColor: [
+                        '#ef4444', // 빨강 (일반)
+                        '#f59e0b', // 주황 (플라스틱)
+                        '#10b981', // 초록 (종이)
+                        '#3b82f6', // 파랑 (유리)
+                        '#6366f1', // 인디고 (금속)
+                        '#8b5cf6', // 보라 (지정)
+                        '#ec4899'  // 핑크 (의료)
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    }
+                }
+            }
+        });
+
+        // 월별 폐기물 배출량 추이 차트
+        const monthlyWasteCtx = document.getElementById('monthlyWaste').getContext('2d');
+        const monthlyWasteChart = new Chart(monthlyWasteCtx, {
+            type: 'line',
+            data: {
+                labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
+                datasets: [{
+                    label: '폐기물 배출량 (tCO₂)',
+                    data: [14, 12, 15, 16, 18, 17, 15, 12, 14, 16, 18, 15],
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 10
+                    }
+                }
+            }
+        });
+
+        // 캠퍼스별 폐기물 배출 현황 차트
+        const campusWasteCtx = document.getElementById('campusWasteComparison').getContext('2d');
+        const campusWasteChart = new Chart(campusWasteCtx, {
+            type: 'bar',
+            data: {
+                labels: ['대연캠퍼스', '용당캠퍼스', '충무캠퍼스'],
+                datasets: [
+                    {
+                        label: '일반폐기물',
+                        data: [45, 25, 15],
+                        backgroundColor: '#ef4444',
+                    },
+                    {
+                        label: '재활용폐기물',
+                        data: [30, 20, 12],
+                        backgroundColor: '#10b981',
+                    },
+                    {
+                        label: '지정/의료폐기물',
+                        data: [15, 8, 10],
+                        backgroundColor: '#8b5cf6',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true,
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // 폐기물 처리 방법별 비율 차트
+        const disposalMethodsCtx = document.getElementById('disposalMethods').getContext('2d');
+        const disposalMethodsChart = new Chart(disposalMethodsCtx, {
+            type: 'pie',
+            data: {
+                labels: ['매립', '소각', '재활용', '퇴비화'],
+                datasets: [{
+                    data: [30, 25, 40, 5],
+                    backgroundColor: [
+                        '#ef4444', // 빨강 (매립)
+                        '#f59e0b', // 주황 (소각)
+                        '#10b981', // 초록 (재활용)
+                        '#3b82f6'  // 파랑 (퇴비화)
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 </html>

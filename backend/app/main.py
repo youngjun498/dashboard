@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import power, water
-from app.api import greenery
+from app.api import greenery, vehicle, waste
 
 app = FastAPI(
     title="Carbon Dashboard API",
@@ -9,19 +9,21 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS 설정
+# CORS 설정 개선
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://127.0.0.1:5501"],  # 실제 프론트엔드 도메인으로 변경
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 
-# Power, Water API 라우터 등록
+# 모든 API 라우터 등록
 app.include_router(power.router, prefix="/api/power", tags=["power"])
 app.include_router(water.router, prefix="/api/water", tags=["water"])
 app.include_router(greenery.router, prefix="/api/greenery", tags=["greenery"])
+app.include_router(vehicle.router, prefix="/api/vehicle", tags=["vehicle"])
+app.include_router(waste.router, prefix="/api/waste", tags=["waste"])
 
 @app.get("/")
 async def root():
