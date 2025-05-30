@@ -41,14 +41,12 @@
             transform: translateY(-5px);
         }
 
-        /* 차트 컨테이너 스타일 */
         .chart-container {
             position: relative;
             height: 100%;
             width: 100%;
         }
 
-        /* 요약 통계 카드 스타일 */
         .summary-card {
             border-radius: 8px;
             padding: 20px;
@@ -158,7 +156,7 @@
                     </div>
                     <div>
                         <p class="text-sm text-gray-500">총 폐기물 연간 배출량</p>
-                        <h3 class="text-xl font-bold">1,234 kg</h3>
+                        <h3 class="text-xl font-bold">0 kg</h3>
                     </div>
                 </div>
                 
@@ -169,7 +167,7 @@
                     </div>
                     <div>
                         <p class="text-sm text-gray-500">연간 탄소 배출량(tCO₂eq)</p>
-                        <h3 class="text-xl font-bold">1.23 tCO₂eq</h3>
+                        <h3 class="text-xl font-bold">0 tCO₂eq</h3>
                     </div>
                 </div>
             </div>
@@ -204,170 +202,9 @@
                 </div>
             </div>
         </div>
+    </div>
 
-       
-    <script>
-        // 차트 데이터 - 백엔드에서 가져올 예정
-        const months = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
-        
-        // 의료 폐기물 데이터 (tCO₂eq)
-        const medicalWasteData = [8.5, 7.8, 9.8, 10.2, 8.7, 7.5, 6.2, 8.3, 9.9, 10.5, 9.2, 10.1];
-        
-        // 지정 폐기물 데이터 (tCO₂eq)
-        const designatedWasteData = [120, 115, 145, 135, 110, 125, 140, 150, 160, 145, 150, 155];
-        
-        // 산업 폐수 데이터 (tCO₂eq)
-        const industrialWastewaterData = [25, 22, 24, 28, 32, 30, 27, 25, 30, 33, 31, 38];
-
-        // 의료 폐기물 차트
-        const medicalWasteCtx = document.getElementById('medicalWasteChart').getContext('2d');
-        const medicalWasteChart = new Chart(medicalWasteCtx, {
-            type: 'line',
-            data: {
-                labels: months,
-                datasets: [{
-                    label: '월별 탄소배출량 (tCO₂eq)',
-                    data: medicalWasteData,
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    fill: true,
-                    tension: 0.3,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#3b82f6'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        title: {
-                            display: true,
-                            text: 'tCO₂eq'
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
-
-        // 지정 폐기물 차트
-        const designatedWasteCtx = document.getElementById('designatedWasteChart').getContext('2d');
-        const designatedWasteChart = new Chart(designatedWasteCtx, {
-            type: 'line',
-            data: {
-                labels: months,
-                datasets: [{
-                    label: '월별 탄소배출량 (tCO₂eq)',
-                    data: designatedWasteData,
-                    borderColor: '#10b981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                    fill: true,
-                    tension: 0.3,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#10b981'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        title: {
-                            display: true,
-                            text: 'tCO₂eq'
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
-
-        // 산업 폐수 차트
-        const industrialWastewaterCtx = document.getElementById('industrialWastewaterChart').getContext('2d');
-        const industrialWastewaterChart = new Chart(industrialWastewaterCtx, {
-            type: 'line',
-            data: {
-                labels: months,
-                datasets: [{
-                    label: '월별 탄소배출량 (tCO₂eq)',
-                    data: industrialWastewaterData,
-                    borderColor: '#f59e0b',
-                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                    fill: true,
-                    tension: 0.3,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#f59e0b'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        title: {
-                            display: true,
-                            text: 'tCO₂eq'
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
-
-        // 연도 변경 이벤트 처리 (백엔드 연동 시 구현)
-        document.getElementById('yearSelector').addEventListener('change', function(e) {
-            const selectedYear = e.target.value;
-            // 백엔드에서 해당 연도 데이터를 가져와서 차트 업데이트
-            // updateChartData(selectedYear);
-            console.log(`연도 변경: ${selectedYear}`);
-        });
-
-        // 백엔드에서 데이터를 가져와 차트를 업데이트하는 함수 (예시)
-        async function updateChartData(year) {
-            try {
-                // API 호출 예시
-                const response = await fetch(`/api/waste/data?year=${year}`);
-                const data = await response.json();
-                
-                // 차트 데이터 업데이트
-                medicalWasteChart.data.datasets[0].data = data.medicalWaste;
-                medicalWasteChart.update();
-                
-                designatedWasteChart.data.datasets[0].data = data.designatedWaste;
-                designatedWasteChart.update();
-                
-                industrialWastewaterChart.data.datasets[0].data = data.industrialWastewater;
-                industrialWastewaterChart.update();
-                
-                // 요약 통계 업데이트
-                document.querySelector('.summary-card:nth-child(1) h3').textContent = 
-                    `${data.totalWaste.toLocaleString()} kg`;
-                document.querySelector('.summary-card:nth-child(2) h3').textContent = 
-                    `${data.totalCarbon.toLocaleString()} tCO₂eq`;
-                
-            } catch (error) {
-                console.error('데이터 업데이트 실패:', error);
-            }
-        }
-    </script>
+    <!-- JavaScript 파일 로드 -->
+    <script src="js/waste.js"></script>
 </body>
 </html>
