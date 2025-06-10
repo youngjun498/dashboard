@@ -6,16 +6,20 @@ class WasteDashboard {
     }
 
     async init() {
-        // IndexedDB 초기화
-        await this.initDatabase();
-        // 차트 초기화
-        this.initCharts();
-        // 이벤트 리스너 설정
-        this.setupEventListeners();
-        // CSV 데이터 로드
-        await this.loadCSVData('backend/data/폐기물.csv');
-        // 초기 데이터 로드
-        await this.loadData();
+        try {
+            // IndexedDB 초기화
+            await this.initDatabase();
+            // 차트 초기화
+            this.initCharts();
+            // 이벤트 리스너 설정
+            this.setupEventListeners();
+            // CSV 데이터 로드
+            await this.loadCSVData('backend/data/waste.csv');
+            // 초기 데이터 로드
+            await this.loadData();
+        } catch (error) {
+            console.error('초기화 중 오류 발생:', error);
+        }
     }
 
     async initDatabase() {
@@ -46,9 +50,16 @@ class WasteDashboard {
     async loadCSVData(csvPath) {
         try {
             const response = await fetch(csvPath);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             const csvText = await response.text();
             const lines = csvText.split('\n');
             
+            if (lines.length < 2) {
+                throw new Error('CSV 파일이 비어있거나 형식이 잘못되었습니다.');
+            }
+
             // 헤더 라인 건너뛰기
             const headers = lines[1].split(',').map(h => h.trim());
             const wasteTypes = headers.slice(1); // 첫 번째 열(날짜) 제외
@@ -57,6 +68,8 @@ class WasteDashboard {
             const data = [];
             for (let i = 2; i < lines.length - 1; i++) { // 마지막 총량 행 제외
                 const values = lines[i].split(',');
+                if (values.length < 2) continue; // 빈 줄 건너뛰기
+                
                 const month = values[0].trim();
                 
                 wasteTypes.forEach((type, index) => {
@@ -85,9 +98,13 @@ class WasteDashboard {
                 await store.add(item);
             }
             
-            console.log('CSV 데이터 로드 완료');
+            console.log('CSV 데이터 로드 완료:', data.length, '개의 레코드');
         } catch (error) {
             console.error('CSV 데이터 로드 실패:', error);
+            // 에러 발생 시 빈 데이터로 차트 초기화
+            this.updateChart(this.medicalWasteChart, new Array(12).fill(0));
+            this.updateChart(this.designatedWasteChart, new Array(12).fill(0));
+            this.updateChart(this.industrialWastewaterChart, new Array(12).fill(0));
         }
     }
 
@@ -233,14 +250,20 @@ class WasteDashboard {
 
     setupEventListeners() {
         // 연도 선택 이벤트
-        document.getElementById('yearSelector').addEventListener('change', async (e) => {
-            await this.loadData(e.target.value);
-        });
+        const yearSelector = document.getElementById('yearSelector');
+        if (yearSelector) {
+            yearSelector.addEventListener('change', async (e) => {
+                await this.loadData(e.target.value);
+            });
+        }
 
         // 보고서 다운로드 이벤트
-        document.querySelector('button').addEventListener('click', () => {
-            this.downloadReport();
-        });
+        const downloadButton = document.querySelector('button');
+        if (downloadButton) {
+            downloadButton.addEventListener('click', () => {
+                this.downloadReport();
+            });
+        }
     }
 
     async loadData(year = new Date().getFullYear()) {
