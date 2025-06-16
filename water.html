@@ -90,9 +90,51 @@
             font-weight: bold;
             margin: 0;
         }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            display: none;
+            background-color: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
+    <!-- 로딩 스피너 -->
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+    </div>
+
     <!-- 사이드바 -->
     <div class="sidebar text-white">
         <div class="px-6 py-4">
@@ -102,43 +144,43 @@
         <div class="mt-10">
             <ul>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="index.html" class="flex items-center">
+                    <a href="/" class="flex items-center">
                         <i class="fas fa-home mr-3"></i>
                         <span>홈</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="vehicle.html" class="flex items-center">
+                    <a href="/vehicle" class="flex items-center">
                         <i class="fas fa-car mr-3"></i>
                         <span>차량</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="waste.html" class="flex items-center">
+                    <a href="/waste" class="flex items-center">
                         <i class="fas fa-trash mr-3"></i>
                         <span>폐기물</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 bg-blue-600">
-                    <a href="water.html" class="flex items-center">
+                    <a href="/water" class="flex items-center">
                         <i class="fas fa-tint mr-3"></i>
                         <span>물</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="greenery.html" class="flex items-center">
+                    <a href="/greenery" class="flex items-center">
                         <i class="fas fa-tree mr-3"></i>
                         <span>녹지</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="power.html" class="flex items-center">
+                    <a href="/power" class="flex items-center">
                         <i class="fas fa-bolt mr-3"></i>
                         <span>전력</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="MACC.html" class="flex items-center">
+                    <a href="/macc" class="flex items-center">
                         <i class="fas fa-chart-line mr-3"></i>
                         <span>MACC</span>
                     </a>
@@ -166,6 +208,12 @@
             </div>
         </div>
 
+        <!-- 에러 메시지 -->
+        <div id="errorMessage" class="error-message">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            <span id="errorText"></span>
+        </div>
+
         <!-- 요약 정보 카드 -->
         <div class="summary-section mb-6">
             <p class="text-gray-500 mb-2">Summary</p>
@@ -176,7 +224,7 @@
                     </div>
                     <div class="summary-text">
                         <h3>2024 총 사용량</h3>
-                        <p>1,234 kg</p>
+                        <p id="totalUsage">- L</p>
                     </div>
                 </div>
                 <div class="summary-card">
@@ -184,8 +232,8 @@
                         <i class="fas fa-cloud text-white"></i>
                     </div>
                     <div class="summary-text">
-                        <h3>월평균 탄소배출량</h3>
-                        <p>1.23 tCO₂eq</p>
+                        <h3>연간 탄소배출량</h3>
+                        <p id="totalEmissions">- tCO₂eq</p>
                     </div>
                 </div>
                 <div class="summary-card">
@@ -193,8 +241,8 @@
                         <i class="fas fa-calendar-alt text-white"></i>
                     </div>
                     <div class="summary-text">
-                        <h3>물 최고 사용달</h3>
-                        <p>12월</p>
+                        <h3>월평균 탄소배출량</h3>
+                        <p id="avgEmissions">- tCO₂eq</p>
                     </div>
                 </div>
             </div>
@@ -218,155 +266,164 @@
                 </div>
             </div>
         </div>
-
-        
-
-      
+    </div>
 
     <script>
-        // 월별 물 사용 추이 차트
-        const waterUsageCtx = document.getElementById('monthlyWaterUsage').getContext('2d');
-        const waterUsageChart = new Chart(waterUsageCtx, {
-            type: 'line',
-            data: {
-                labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
-                datasets: [{
-                    label: '월별 물 사용량(L)',
-                    data: [4200, 4800, 4100, 3700, 4300, 3500, 4000, 3500, 4200, 4600, 5100, 6100],
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        min: 0,
-                        ticks: {
-                            callback: function(value) {
-                                return value.toLocaleString();
+        let monthlyWaterUsageChart, monthlyCarbonEmissionsChart;
+
+        function initCharts() {
+            // 월별 물 사용 추이 차트
+            const waterUsageCtx = document.getElementById('monthlyWaterUsage').getContext('2d');
+            monthlyWaterUsageChart = new Chart(waterUsageCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '월별 물 사용량(L)',
+                        data: [],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString();
+                                }
                             }
                         }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'bottom'
                     },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return `${context.dataset.label}: ${context.raw.toLocaleString()}`;
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw.toLocaleString()}`;
+                                }
                             }
                         }
                     }
                 }
-            }
-        });
+            });
 
-        // 월별 탄소 배출량 차트
-        const carbonEmissionsCtx = document.getElementById('monthlyCarbonEmissions').getContext('2d');
-        const carbonEmissionsChart = new Chart(carbonEmissionsCtx, {
-            type: 'line',
-            data: {
-                labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
-                datasets: [{
-                    label: '월별 탄소 배출량(tCO₂eq)',
-                    data: [60, 75, 80, 55, 70, 55, 30, 30, 60, 75, 85, 90],
-                    borderColor: '#ef4444',
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        min: 0,
-                        ticks: {
-                            callback: function(value) {
-                                return value.toLocaleString();
+            // 월별 탄소 배출량 차트
+            const carbonEmissionsCtx = document.getElementById('monthlyCarbonEmissions').getContext('2d');
+            monthlyCarbonEmissionsChart = new Chart(carbonEmissionsCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '월별 탄소 배출량(tCO₂eq)',
+                        data: [],
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString();
+                                }
                             }
                         }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'bottom'
                     },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return `${context.dataset.label}: ${context.raw.toLocaleString()}`;
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw.toLocaleString()}`;
+                                }
                             }
                         }
                     }
                 }
-            }
-        });
+            });
+        }
 
-        // 백엔드 데이터를 불러오는 함수 (향후 구현)
-        async function fetchWaterData() {
+        async function loadWaterData() {
             try {
-                // API 호출하여 데이터 불러오기
-                const response = await fetch('/api/water/data');
-                const data = await response.json();
+                document.getElementById('loading').style.display = 'flex';
                 
-                // 차트 데이터 업데이트
-                updateWaterUsageChart(data.monthlyUsage);
-                updateCarbonEmissionsChart(data.monthlyEmissions);
-                
-                // 통계 카드 데이터 업데이트
-                updateStatistics(data.statistics);
-            } catch (error) {
-                console.error('데이터 로드 실패:', error);
+                const res = await fetch('/api/emissions/water');
+                if (!res.ok) throw new Error('데이터를 불러오는 중 오류가 발생했습니다.');
+                const data = await res.json();
+
+                updateCharts(data);
+                updateSummary(data);
+
+            } catch (err) {
+                document.getElementById('errorText').textContent = err.message;
+                document.getElementById('errorMessage').style.display = 'block';
+                setTimeout(() => document.getElementById('errorMessage').style.display = 'none', 5000);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
             }
         }
 
-        // 물 사용량 차트 업데이트 함수
-        function updateWaterUsageChart(monthlyData) {
-            waterUsageChart.data.datasets[0].data = monthlyData;
-            waterUsageChart.update();
-        }
-
-        // 탄소 배출량 차트 업데이트 함수
-        function updateCarbonEmissionsChart(emissionsData) {
-            carbonEmissionsChart.data.datasets[0].data = emissionsData;
-            carbonEmissionsChart.update();
-        }
-
-        // 통계 카드 업데이트 함수
-        function updateStatistics(statistics) {
-            // 요약 카드 업데이트
-            document.querySelector('.summary-cards .summary-card:nth-child(1) .summary-text p').textContent = 
-                `${statistics.totalUsage.toLocaleString()} kg`;
-            document.querySelector('.summary-cards .summary-card:nth-child(2) .summary-text p').textContent = 
-                `${statistics.avgEmission.toLocaleString()} tCO₂eq`;
-            document.querySelector('.summary-cards .summary-card:nth-child(3) .summary-text p').textContent = 
-                `${statistics.peakMonth}월`;
+        function updateCharts(data) {
+            // 날짜와 탄소배출량 추출
+            const dates = data.map(d => d['날짜']);
+            const emissions = data.map(d => d['탄소배출량']);
             
-            // 통계 카드 업데이트
-            document.querySelector('.stat-card:nth-child(1) h2').textContent = 
-                `${statistics.annualUsage.toLocaleString()} m³`;
-            document.querySelector('.stat-card:nth-child(2) h2').textContent = 
-                `${statistics.totalEmission.toLocaleString()} tCO₂`;
-            document.querySelector('.stat-card:nth-child(3) h2').textContent = 
-                `${statistics.dailyAvg.toLocaleString()} m³`;
-            document.querySelector('.stat-card:nth-child(4) h2').textContent = 
-                `${statistics.perPersonUsage.toLocaleString()} m³`;
+            // 월별 탄소 배출량 차트 업데이트
+            monthlyCarbonEmissionsChart.data.labels = dates;
+            monthlyCarbonEmissionsChart.data.datasets[0].data = emissions;
+            monthlyCarbonEmissionsChart.update();
+
+            // 물 사용량은 배출량에서 역산 (탄소배출량 = 총량 * 전력원단위 * 배출계수)
+            // 총량 = 탄소배출량 / (전력원단위 * 배출계수)
+            // 전력원단위 = 0.3265, 배출계수 = 0.4541
+            const powerUnit = 0.3265;
+            const emissionFactor = 0.4541;
+            const waterUsage = emissions.map(emission => Math.round(emission / (powerUnit * emissionFactor)));
+            
+            monthlyWaterUsageChart.data.labels = dates;
+            monthlyWaterUsageChart.data.datasets[0].data = waterUsage;
+            monthlyWaterUsageChart.update();
         }
 
-        // 페이지 로드 시 초기 데이터 가져오기 (실제 API 연결 시 활성화)
-        // document.addEventListener('DOMContentLoaded', fetchWaterData);
+        function updateSummary(data) {
+            // 총 탄소배출량
+            const totalEmissions = data.reduce((sum, d) => sum + d['탄소배출량'], 0);
+            document.getElementById('totalEmissions').textContent = `${totalEmissions.toFixed(2)} tCO₂eq`;
+
+            // 평균 탄소배출량
+            const avgEmissions = totalEmissions / data.length;
+            document.getElementById('avgEmissions').textContent = `${avgEmissions.toFixed(2)} tCO₂eq`;
+
+            // 총 사용량 (역산)
+            const powerUnit = 0.3265;
+            const emissionFactor = 0.4541;
+            const totalUsage = Math.round(totalEmissions / (powerUnit * emissionFactor));
+            document.getElementById('totalUsage').textContent = `${totalUsage.toLocaleString()} L`;
+        }
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            loadWaterData();
+        });
     </script>
 </body>
 </html>

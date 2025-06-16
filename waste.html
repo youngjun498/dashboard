@@ -67,9 +67,51 @@
             justify-content: center;
             margin-right: 15px;
         }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            display: none;
+            background-color: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
+    <!-- 로딩 스피너 -->
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+    </div>
+
     <!-- 사이드바 -->
     <div class="sidebar text-white">
         <div class="px-6 py-4">
@@ -79,43 +121,43 @@
         <div class="mt-10">
             <ul>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="index.html" class="flex items-center">
+                    <a href="/" class="flex items-center">
                         <i class="fas fa-home mr-3"></i>
                         <span>홈</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="vehicle.html" class="flex items-center">
+                    <a href="/vehicle" class="flex items-center">
                         <i class="fas fa-car mr-3"></i>
                         <span>차량</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 bg-purple-600">
-                    <a href="waste.html" class="flex items-center">
+                    <a href="/waste" class="flex items-center">
                         <i class="fas fa-trash mr-3"></i>
                         <span>폐기물</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="water.html" class="flex items-center">
+                    <a href="/water" class="flex items-center">
                         <i class="fas fa-tint mr-3"></i>
                         <span>물</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="greenery.html" class="flex items-center">
+                    <a href="/greenery" class="flex items-center">
                         <i class="fas fa-tree mr-3"></i>
                         <span>녹지</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="power.html" class="flex items-center">
+                    <a href="/power" class="flex items-center">
                         <i class="fas fa-bolt mr-3"></i>
                         <span>전력</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="macc.html" class="flex items-center">
+                    <a href="/macc" class="flex items-center">
                         <i class="fas fa-chart-line mr-3"></i>
                         <span>MACC</span>
                     </a>
@@ -143,6 +185,12 @@
             </div>
         </div>
 
+        <!-- 에러 메시지 -->
+        <div id="errorMessage" class="error-message">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            <span id="errorText"></span>
+        </div>
+
         <!-- 요약 섹션 -->
         <div class="mb-6">
             <h2 class="text-lg font-semibold mb-4">Summary</h2>
@@ -154,7 +202,7 @@
                     </div>
                     <div>
                         <p class="text-sm text-gray-500">총 폐기물 연간 배출량</p>
-                        <h3 class="text-xl font-bold">0 kg</h3>
+                        <h3 class="text-xl font-bold" id="totalWaste">- kg</h3>
                     </div>
                 </div>
                 
@@ -165,7 +213,18 @@
                     </div>
                     <div>
                         <p class="text-sm text-gray-500">연간 탄소 배출량(tCO₂eq)</p>
-                        <h3 class="text-xl font-bold">0 tCO₂eq</h3>
+                        <h3 class="text-xl font-bold" id="totalEmissions">- tCO₂eq</h3>
+                    </div>
+                </div>
+
+                <!-- 월평균 탄소 배출량 -->
+                <div class="summary-card">
+                    <div class="summary-icon bg-red-100">
+                        <i class="fas fa-calendar text-red-500 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">월평균 탄소 배출량</p>
+                        <h3 class="text-xl font-bold" id="avgEmissions">- tCO₂eq</h3>
                     </div>
                 </div>
             </div>
@@ -202,7 +261,200 @@
         </div>
     </div>
 
-    <!-- JavaScript 파일 로드 -->
-    <script src="js/waste.js"></script>
+    <script>
+        let medicalWasteChart, designatedWasteChart, industrialWastewaterChart;
+
+        function initCharts() {
+            // 의료 폐기물 차트
+            const medicalCtx = document.getElementById('medicalWasteChart').getContext('2d');
+            medicalWasteChart = new Chart(medicalCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '의료 폐기물 탄소배출량 (tCO₂eq)',
+                        data: [],
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toFixed(4);
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // 지정 폐기물 차트
+            const designatedCtx = document.getElementById('designatedWasteChart').getContext('2d');
+            designatedWasteChart = new Chart(designatedCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '지정 폐기물 탄소배출량 (tCO₂eq)',
+                        data: [],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toFixed(4);
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // 산업 폐수 차트
+            const industrialCtx = document.getElementById('industrialWastewaterChart').getContext('2d');
+            industrialWastewaterChart = new Chart(industrialCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '산업 폐수 탄소배출량 (tCO₂eq)',
+                        data: [],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toFixed(4);
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        async function loadWasteData() {
+            try {
+                document.getElementById('loading').style.display = 'flex';
+                
+                const res = await fetch('/api/emissions/waste/by-type');
+                if (!res.ok) throw new Error('데이터를 불러오는 중 오류가 발생했습니다.');
+                const data = await res.json();
+
+                // 종류별로 분리된 실제 데이터 사용
+                updateChartsWithRealData(data);
+                updateSummaryWithRealData(data);
+
+            } catch (err) {
+                document.getElementById('errorText').textContent = err.message;
+                document.getElementById('errorMessage').style.display = 'block';
+                setTimeout(() => document.getElementById('errorMessage').style.display = 'none', 5000);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function updateChartsWithRealData(data) {
+            // 실제 종류별 데이터 사용
+            const medicalData = data['의료폐기물'] || [];
+            const designatedData = data['지정폐기물'] || [];
+            const industrialData = data['산업폐수'] || [];
+
+            // 의료 폐기물 차트 업데이트
+            if (medicalData.length > 0) {
+                const medicalDates = medicalData.map(d => d['날짜']);
+                const medicalEmissions = medicalData.map(d => d['탄소배출량']);
+                medicalWasteChart.data.labels = medicalDates;
+                medicalWasteChart.data.datasets[0].data = medicalEmissions;
+                medicalWasteChart.update();
+            }
+
+            // 지정 폐기물 차트 업데이트
+            if (designatedData.length > 0) {
+                const designatedDates = designatedData.map(d => d['날짜']);
+                const designatedEmissions = designatedData.map(d => d['탄소배출량']);
+                designatedWasteChart.data.labels = designatedDates;
+                designatedWasteChart.data.datasets[0].data = designatedEmissions;
+                designatedWasteChart.update();
+            }
+
+            // 산업 폐수 차트 업데이트
+            if (industrialData.length > 0) {
+                const industrialDates = industrialData.map(d => d['날짜']);
+                const industrialEmissions = industrialData.map(d => d['탄소배출량']);
+                industrialWastewaterChart.data.labels = industrialDates;
+                industrialWastewaterChart.data.datasets[0].data = industrialEmissions;
+                industrialWastewaterChart.update();
+            }
+        }
+
+        function updateSummaryWithRealData(data) {
+            // 각 종류별 총합 계산
+            const medicalTotal = (data['의료폐기물'] || []).reduce((sum, d) => sum + d['탄소배출량'], 0);
+            const designatedTotal = (data['지정폐기물'] || []).reduce((sum, d) => sum + d['탄소배출량'], 0);
+            const industrialTotal = (data['산업폐수'] || []).reduce((sum, d) => sum + d['탄소배출량'], 0);
+            
+            // 총 탄소배출량
+            const totalEmissions = medicalTotal + designatedTotal + industrialTotal;
+            document.getElementById('totalEmissions').textContent = `${totalEmissions.toFixed(4)} tCO₂eq`;
+
+            // 평균 탄소배출량 (12개월 기준)
+            const avgEmissions = totalEmissions / 12;
+            document.getElementById('avgEmissions').textContent = `${avgEmissions.toFixed(4)} tCO₂eq`;
+
+            // 총 폐기물량 (추정값)
+            document.getElementById('totalWaste').textContent = `${Math.round(totalEmissions * 1000)} kg`;
+        }
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            loadWasteData();
+        });
+    </script>
 </body>
 </html>

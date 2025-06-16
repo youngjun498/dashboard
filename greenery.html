@@ -40,9 +40,51 @@
         .stat-card:hover {
             transform: translateY(-5px);
         }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            display: none;
+            background-color: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
+    <!-- 로딩 스피너 -->
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+    </div>
+
     <!-- 사이드바 -->
     <div class="sidebar text-white">
         <div class="px-6 py-4">
@@ -52,43 +94,43 @@
         <div class="mt-10">
             <ul>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="index.html" class="flex items-center">
+                    <a href="/" class="flex items-center">
                         <i class="fas fa-home mr-3"></i>
                         <span>홈</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="vehicle.html" class="flex items-center">
+                    <a href="/vehicle" class="flex items-center">
                         <i class="fas fa-car mr-3"></i>
                         <span>차량</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="waste.html" class="flex items-center">
+                    <a href="/waste" class="flex items-center">
                         <i class="fas fa-trash mr-3"></i>
                         <span>폐기물</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="water.html" class="flex items-center">
+                    <a href="/water" class="flex items-center">
                         <i class="fas fa-tint mr-3"></i>
                         <span>물</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 bg-green-600">
-                    <a href="greenery.html" class="flex items-center">
+                    <a href="/greenery" class="flex items-center">
                         <i class="fas fa-tree mr-3"></i>
                         <span>녹지</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="power.html" class="flex items-center">
+                    <a href="/power" class="flex items-center">
                         <i class="fas fa-bolt mr-3"></i>
                         <span>전력</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                  <a href="macc.html" class="flex items-center">
+                  <a href="/macc" class="flex items-center">
                       <i class="fas fa-bolt mr-3"></i>
                       <span>MACC</span>
                   </a>
@@ -101,7 +143,7 @@
     <div class="main-content">
         <!-- 헤더 -->
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold">녹지 탄소흡수 및 저장 현황</h1>
+            <h1 class="text-2xl font-bold">녹지</h1>
             <div class="flex items-center">
                 <div class="relative mr-4">
                     <select class="bg-white border rounded-md px-4 py-2 pr-8 appearance-none focus:outline-none">
@@ -113,9 +155,13 @@
                     </div>
                 </div>
                 
-                    
-                
             </div>
+        </div>
+
+        <!-- 에러 메시지 -->
+        <div id="errorMessage" class="error-message">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            <span id="errorText"></span>
         </div>
 
         <!-- 통계 카드 -->
@@ -124,7 +170,7 @@
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-sm opacity-80">총 녹지 면적</p>
-                        <h2 class="text-2xl font-bold">86,500 m²</h2>
+                        <h2 class="text-2xl font-bold" id="totalArea">- m²</h2>
                     </div>
                     <div class="bg-green-400 p-3 rounded-full">
                         <i class="fas fa-tree text-xl"></i>
@@ -135,7 +181,7 @@
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-sm opacity-80">총 수목 수</p>
-                        <h2 class="text-2xl font-bold">871 그루</h2>
+                        <h2 class="text-2xl font-bold" id="totalTrees">- 그루</h2>
                     </div>
                     <div class="bg-teal-400 p-3 rounded-full">
                         <i class="fas fa-tree text-xl"></i>
@@ -146,7 +192,7 @@
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-sm opacity-80">연간 탄소 저장량</p>
-                        <h2 class="text-2xl font-bold">1,876 tCO₂</h2>
+                        <h2 class="text-2xl font-bold" id="carbonStorage">- tCO₂</h2>
                     </div>
                     <div class="bg-lime-400 p-3 rounded-full">
                         <i class="fas fa-database text-xl"></i>
@@ -157,7 +203,7 @@
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-sm opacity-80">연간 탄소 흡수량</p>
-                        <h2 class="text-2xl font-bold">243 tCO₂</h2>
+                        <h2 class="text-2xl font-bold" id="carbonAbsorption">- tCO₂</h2>
                     </div>
                     <div class="bg-emerald-400 p-3 rounded-full">
                         <i class="fas fa-arrow-down text-xl"></i>
@@ -182,7 +228,7 @@
             </div>
         </div>
 
-        <!-- 두 번째 차트 행 (수정) -->
+        <!-- 두 번째 차트 행 -->
         <div class="mb-6">
           <div class="card w-full">
             <h3 class="text-lg font-semibold mb-4">연간 녹지 흡수량 및 저장량</h3>
@@ -194,156 +240,233 @@
     </div>
 
     <script>
-        // 나무별 탄소 흡수량 차트
-        const treeTypeCtx = document.getElementById('carbonByTreeType').getContext('2d');
-        const treeTypeChart = new Chart(treeTypeCtx, {
-            type: 'bar',
-            data: {
-                labels: ['벚나무', '소나무', '히말라야시다', '모과나무'],
-                datasets: [{
-                    label: '탄소 흡수량 (tCO₂/년)',
-                    data: [125.0, 78.3, 35.7, 0.2],
-                    backgroundColor: [
-                        '#f87171', // 벚나무 - 빨강 계열
-                        '#10b981', // 소나무 - 녹색 계열
-                        '#60a5fa', // 히말라야시다 - 파랑 계열
-                        '#fbbf24'  // 모과나무 - 노랑 계열
-                    ],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'tCO₂/년'
+        let carbonByTreeChart, treeCountChart, absorptionStorageChart;
+
+        function initCharts() {
+            // 나무별 탄소 흡수량 차트
+            const treeTypeCtx = document.getElementById('carbonByTreeType').getContext('2d');
+            carbonByTreeChart = new Chart(treeTypeCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '탄소 흡수량 (tCO₂/년)',
+                        data: [],
+                        backgroundColor: [
+                            '#f87171', // 벚나무 - 빨강 계열
+                            '#10b981', // 소나무 - 녹색 계열
+                            '#60a5fa', // 히말라야시다 - 파랑 계열
+                            '#fbbf24'  // 모과나무 - 노랑 계열
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'tCO₂/년'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
                         }
                     }
                 }
-            }
-        });
+            });
 
-        // 나무 개수 차트
-        const treeCountCtx = document.getElementById('treeCount').getContext('2d');
-        const treeCountChart = new Chart(treeCountCtx, {
-            type: 'bar',
-            data: {
-                labels: ['벚나무', '소나무', '히말라야시다', '모과나무'],
-                datasets: [{
-                    label: '나무 개수 (그루)',
-                    data: [500, 300, 70, 1],
-                    backgroundColor: [
-                        '#f87171', // 벚나무 - 빨강 계열
-                        '#10b981', // 소나무 - 녹색 계열
-                        '#60a5fa', // 히말라야시다 - 파랑 계열
-                        '#fbbf24'  // 모과나무 - 노랑 계열
-                    ],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: '그루'
+            // 나무 개수 차트
+            const treeCountCtx = document.getElementById('treeCount').getContext('2d');
+            treeCountChart = new Chart(treeCountCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '나무 개수 (그루)',
+                        data: [],
+                        backgroundColor: [
+                            '#f87171', // 벚나무 - 빨강 계열
+                            '#10b981', // 소나무 - 녹색 계열
+                            '#60a5fa', // 히말라야시다 - 파랑 계열
+                            '#fbbf24'  // 모과나무 - 노랑 계열
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '그루'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
                         }
                     }
                 }
-            }
-        });
+            });
 
-        // 연간 녹지 흡수량 및 저장량 차트 (수평 막대)
-        const ctx = document.getElementById('absorptionStorageChart').getContext('2d');
-        new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: ['수관면적 (나무)', '비수관면적 (땅)'],
-            datasets: [
-              {
-                label: '연간 흡수량 (tCO₂/년)',
-                data: [239.2, 3.8],
-                backgroundColor: '#34d399', // 연한 녹색
-                borderColor: '#10b981',
-                borderWidth: 1,
-                hoverBackgroundColor: '#10b981',
-                hoverBorderColor: '#047857'
-              },
-              {
-                label: '탄소 저장량 (tCO₂)',
-                data: [1860.4, 15.6],
-                backgroundColor: '#fbbf24', // 노란색
-                borderColor: '#f59e0b',
-                borderWidth: 1,
-                hoverBackgroundColor: '#f59e0b',
-                hoverBorderColor: '#d97706'
-              }
-            ]
-          },
-          options: {
-            indexAxis: 'y',            // 수평 막대 차트로 변경
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              x: {
-                beginAtZero: true,
-                title: {
-                  display: true,
-                  text: 'tCO₂'
-                }
-              },
-              y: {
-                ticks: {
-                  font: {
-                    weight: 'bold'
-                  }
-                }
-              }
-            },
-            plugins: {
-              tooltip: {
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                titleFont: {
-                  size: 14,
-                  weight: 'bold'
+            // 연간 녹지 흡수량 및 저장량 차트
+            const absorptionCtx = document.getElementById('absorptionStorageChart').getContext('2d');
+            absorptionStorageChart = new Chart(absorptionCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: '연간 흡수량 (tCO₂/년)',
+                            data: [],
+                            backgroundColor: '#34d399',
+                            borderColor: '#10b981',
+                            borderWidth: 1,
+                            hoverBackgroundColor: '#10b981',
+                            hoverBorderColor: '#047857'
+                        },
+                        {
+                            label: '탄소 저장량 (tCO₂)',
+                            data: [],
+                            backgroundColor: '#fbbf24',
+                            borderColor: '#f59e0b',
+                            borderWidth: 1,
+                            hoverBackgroundColor: '#f59e0b',
+                            hoverBorderColor: '#d97706'
+                        }
+                    ]
                 },
-                bodyFont: {
-                  size: 13
-                },
-                padding: 12,
-                displayColors: true,
-                callbacks: {
-                  label: function(context) {
-                    let label = context.dataset.label || '';
-                    if (label) {
-                      label += ': ';
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'tCO₂'
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                font: {
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleFont: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            padding: 12,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.x !== null) {
+                                        label += context.parsed.x.toLocaleString() + ' tCO₂';
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        legend: {
+                            labels: {
+                                font: {
+                                    size: 13
+                                },
+                                padding: 20
+                            }
+                        }
                     }
-                    if (context.parsed.x !== null) {
-                      label += context.parsed.x.toLocaleString() + ' tCO₂';
-                    }
-                    return label;
-                  }
                 }
-              },
-              legend: {
-                labels: {
-                  font: {
-                    size: 13
-                  },
-                  padding: 20
-                }
-              }
+            });
+        }
+
+        async function loadGreeneryData() {
+            try {
+                document.getElementById('loading').style.display = 'flex';
+                
+                const res = await fetch('/api/emissions/greenery/details');
+                if (!res.ok) throw new Error('데이터를 불러오는 중 오류가 발생했습니다.');
+                const data = await res.json();
+
+                updateSummaryCards(data.summary);
+                updateTreeCharts(data.tree_data);
+                updateAreaChart(data.area_data);
+
+            } catch (err) {
+                document.getElementById('errorText').textContent = err.message;
+                document.getElementById('errorMessage').style.display = 'block';
+                setTimeout(() => document.getElementById('errorMessage').style.display = 'none', 5000);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
             }
-          }
+        }
+
+        function updateSummaryCards(summary) {
+            document.getElementById('totalArea').textContent = `${summary.총_녹지_면적.toLocaleString()} m²`;
+            document.getElementById('totalTrees').textContent = `${summary.총_수목_수.toLocaleString()} 그루`;
+            document.getElementById('carbonStorage').textContent = `${summary.연간_탄소_저장량.toLocaleString()} tCO₂`;
+            document.getElementById('carbonAbsorption').textContent = `${summary.연간_탄소_흡수량.toLocaleString()} tCO₂`;
+        }
+
+        function updateTreeCharts(treeData) {
+            const treeNames = treeData.map(d => d.수종명);
+            const treeCounts = treeData.map(d => d.개체수);
+            const carbonAbsorptions = treeData.map(d => d.탄소흡수량);
+
+            // 나무별 탄소 흡수량 차트 업데이트
+            carbonByTreeChart.data.labels = treeNames;
+            carbonByTreeChart.data.datasets[0].data = carbonAbsorptions;
+            carbonByTreeChart.update();
+
+            // 나무 개수 차트 업데이트
+            treeCountChart.data.labels = treeNames;
+            treeCountChart.data.datasets[0].data = treeCounts;
+            treeCountChart.update();
+        }
+
+        function updateAreaChart(areaData) {
+            const labels = areaData.map(d => d.구분);
+            const absorptions = areaData.map(d => d.흡수량);
+            const storages = areaData.map(d => d.저장량);
+
+            absorptionStorageChart.data.labels = labels;
+            absorptionStorageChart.data.datasets[0].data = absorptions;
+            absorptionStorageChart.data.datasets[1].data = storages;
+            absorptionStorageChart.update();
+        }
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            loadGreeneryData();
+            
+            document.getElementById('refreshBtn').addEventListener('click', loadGreeneryData);
         });
     </script>
 </body>

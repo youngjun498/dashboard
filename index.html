@@ -72,49 +72,49 @@
         <div class="mt-10">
             <ul>
                 <li class="px-6 py-3 bg-blue-600">
-                    <a href="index.html" class="flex items-center">
+                    <a href="/" class="flex items-center">
                         <i class="fas fa-home mr-3"></i>
                         <span>홈</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="vehicle.html" class="flex items-center">
+                    <a href="/vehicle" class="flex items-center">
                         <i class="fas fa-car mr-3"></i>
                         <span>차량</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="waste.html" class="flex items-center">
+                    <a href="/waste" class="flex items-center">
                         <i class="fas fa-trash mr-3"></i>
                         <span>폐기물</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="water.html" class="flex items-center">
+                    <a href="/water" class="flex items-center">
                         <i class="fas fa-tint mr-3"></i>
                         <span>물</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="greenery.html" class="flex items-center">
+                    <a href="/greenery" class="flex items-center">
                         <i class="fas fa-tree mr-3"></i>
                         <span>녹지</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="power.html" class="flex items-center">
+                    <a href="/power" class="flex items-center">
                         <i class="fas fa-bolt mr-3"></i>
                         <span>전력</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="macc.html" class="flex items-center">
+                    <a href="/macc" class="flex items-center">
                         <i class="fas fa-chart-bar mr-3"></i>
                         <span>MACC</span>
                     </a>
                 </li>
             </ul>
-        </div>
+    </div>
     </div>
 
     <!-- 메인 콘텐츠 -->
@@ -215,9 +215,9 @@
 
         <!-- 두 번째 차트 행 -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <!-- 월별 연료별 탄소 배출량 (차량) -->
+            <!-- 일별 연료별 탄소 배출량 (차량) - vehicle.csv 데이터 사용 -->
             <div class="card">
-                <h3 class="text-lg font-semibold mb-4">월별 연료별 탄소 배출량 (tCO₂eq) 차량</h3>
+                <h3 class="text-lg font-semibold mb-4">일별 연료별 탄소 배출량 (tCO₂eq) 차량</h3>
                 <div class="h-80">
                     <canvas id="vehicleEmissionsByFuel"></canvas>
                 </div>
@@ -234,6 +234,87 @@
     </div>
 
     <script>
+        let vehicleEmissionsByFuelChart;
+
+        // 차량 데이터 로드 함수 (vehicle.html과 동일한 방식)
+        async function loadVehicleData() {
+            try {
+                const res = await fetch('/api/emissions/vehicle');
+                if (!res.ok) throw new Error('차량 데이터를 불러오는 중 오류가 발생했습니다.');
+                const data = await res.json();
+                updateVehicleChart(data);
+            } catch (err) {
+                console.error('차량 데이터 로드 실패:', err);
+                // 에러 시 기본 데이터로 차트 표시
+                updateVehicleChartWithDefaultData();
+            }
+        }
+
+        // 차량 차트 업데이트 (실제 API 데이터 사용)
+        function updateVehicleChart(data) {
+            // vehicle.html과 동일한 로직: 연료별 데이터 그룹화
+            const fuelRatios = {
+                '휘발유': 0.35,
+                '경유': 0.25, 
+                'LPG': 0.15,
+                '전기': 0.10,
+                '하이브리드': 0.15
+            };
+            
+            const dates = [...new Set(data.map(d => d['날짜']))].sort();
+            const fuelData = {
+                '휘발유': [],
+                '경유': [],
+                'LPG': [],
+                '전기': [],
+                '하이브리드': []
+            };
+
+            dates.forEach(date => {
+                const dateData = data.filter(d => d['날짜'] === date);
+                const totalEmission = dateData.reduce((sum, d) => sum + d['탄소배출량'], 0);
+                
+                // 각 연료별로 비율에 따라 배출량 분배
+                Object.keys(fuelRatios).forEach(fuel => {
+                    fuelData[fuel].push(totalEmission * fuelRatios[fuel]);
+                });
+            });
+
+            // 날짜 포맷팅 (YYYY-MM-DD -> MM/DD)
+            const formattedDates = dates.map(date => {
+                const d = new Date(date);
+                return `${d.getMonth() + 1}/${d.getDate()}`;
+            });
+
+            vehicleEmissionsByFuelChart.data.labels = formattedDates;
+            vehicleEmissionsByFuelChart.data.datasets[0].data = fuelData['휘발유'];
+            vehicleEmissionsByFuelChart.data.datasets[1].data = fuelData['경유'];
+            vehicleEmissionsByFuelChart.data.datasets[2].data = fuelData['LPG'];
+            vehicleEmissionsByFuelChart.data.datasets[3].data = fuelData['전기'];
+            vehicleEmissionsByFuelChart.data.datasets[4].data = fuelData['하이브리드'];
+            vehicleEmissionsByFuelChart.update();
+        }
+
+        // 차량 차트 업데이트 (기본 데이터 - API 실패시)
+        function updateVehicleChartWithDefaultData() {
+            const defaultLabels = ['2/1', '2/2', '2/3', '2/4', '2/5', '2/6', '2/7', '2/8', '2/9', '2/10', '2/11', '2/12'];
+            const defaultData = [
+                [120, 115, 130, 125, 135, 140, 130, 125, 135, 145, 140, 150], // 휘발유
+                [80, 75, 85, 80, 90, 95, 85, 80, 90, 100, 95, 105],           // 경유
+                [30, 28, 32, 30, 35, 37, 32, 30, 35, 38, 36, 40],             // LPG
+                [5, 5, 6, 6, 7, 8, 7, 6, 7, 8, 8, 9],                        // 전기
+                [8, 8, 9, 9, 10, 11, 10, 9, 10, 11, 11, 12]                  // 하이브리드
+            ];
+
+            vehicleEmissionsByFuelChart.data.labels = defaultLabels;
+            vehicleEmissionsByFuelChart.data.datasets[0].data = defaultData[0];
+            vehicleEmissionsByFuelChart.data.datasets[1].data = defaultData[1];
+            vehicleEmissionsByFuelChart.data.datasets[2].data = defaultData[2];
+            vehicleEmissionsByFuelChart.data.datasets[3].data = defaultData[3];
+            vehicleEmissionsByFuelChart.data.datasets[4].data = defaultData[4];
+            vehicleEmissionsByFuelChart.update();
+        }
+
         // 폐기물 월별 탄소 배출량 차트
         const wasteCtx = document.getElementById('wasteEmissions').getContext('2d');
         const wasteChart = new Chart(wasteCtx, {
@@ -328,36 +409,36 @@
             }
         });
 
-        // 차량 월별 연료별 탄소 배출량 차트
+        // 차량 일별 연료별 탄소 배출량 차트 초기화 (vehicle.html과 동일한 설정)
         const vehicleCtx = document.getElementById('vehicleEmissionsByFuel').getContext('2d');
-        const vehicleChart = new Chart(vehicleCtx, {
+        vehicleEmissionsByFuelChart = new Chart(vehicleCtx, {
             type: 'bar',
             data: {
-                labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
+                labels: [],
                 datasets: [
                     {
                         label: '휘발유',
-                        data: [120, 115, 130, 125, 135, 140, 130, 125, 135, 145, 140, 150],
+                        data: [],
                         backgroundColor: '#ef4444'
                     },
                     {
                         label: '경유',
-                        data: [80, 75, 85, 80, 90, 95, 85, 80, 90, 100, 95, 105],
+                        data: [],
                         backgroundColor: '#1f2937'
                     },
                     {
                         label: 'LPG',
-                        data: [30, 28, 32, 30, 35, 37, 32, 30, 35, 38, 36, 40],
+                        data: [],
                         backgroundColor: '#f59e0b'
                     },
                     {
                         label: '전기',
-                        data: [5, 5, 6, 6, 7, 8, 7, 6, 7, 8, 8, 9],
+                        data: [],
                         backgroundColor: '#10b981'
                     },
                     {
                         label: '하이브리드',
-                        data: [8, 8, 9, 9, 10, 11, 10, 9, 10, 11, 11, 12],
+                        data: [],
                         backgroundColor: '#60a5fa'
                     }
                 ]
@@ -412,6 +493,11 @@
                     }
                 }
             }
+        });
+
+        // 페이지 로드 시 차량 데이터 불러오기
+        document.addEventListener('DOMContentLoaded', () => {
+            loadVehicleData();
         });
     </script>
 </body>

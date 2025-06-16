@@ -34,47 +34,11 @@
             padding: 20px;
             margin-bottom: 20px;
         }
-        
-        .stat-card {
-            transition: transform 0.3s ease;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
 
         #map {
             height: 500px;
             width: 100%;
             border-radius: 8px;
-        }
-
-        .legend {
-            padding: 10px;
-            background: white;
-            border-radius: 5px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.2);
-            line-height: 24px;
-        }
-
-        .legend i {
-            width: 18px;
-            height: 18px;
-            float: left;
-            margin-right: 8px;
-            opacity: 0.7;
-        }
-
-        .info {
-            padding: 10px;
-            background: white;
-            border-radius: 5px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.2);
-        }
-
-        .info h4 {
-            margin: 0 0 5px;
-            font-weight: bold;
         }
 
         .custom-tooltip {
@@ -88,9 +52,51 @@
             display: none;
             pointer-events: none;
         }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            display: none;
+            background-color: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
+    <!-- 로딩 스피너 -->
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+    </div>
+
     <!-- 사이드바 -->
     <div class="sidebar text-white">
         <div class="px-6 py-4">
@@ -100,43 +106,43 @@
         <div class="mt-10">
             <ul>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="index.html" class="flex items-center">
+                    <a href="/" class="flex items-center">
                         <i class="fas fa-home mr-3"></i>
                         <span>홈</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="vehicle.html" class="flex items-center">
+                    <a href="/vehicle" class="flex items-center">
                         <i class="fas fa-car mr-3"></i>
                         <span>차량</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="waste.html" class="flex items-center">
+                    <a href="/waste" class="flex items-center">
                         <i class="fas fa-trash mr-3"></i>
                         <span>폐기물</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="water.html" class="flex items-center">
+                    <a href="/water" class="flex items-center">
                         <i class="fas fa-tint mr-3"></i>
                         <span>물</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="greenery.html" class="flex items-center">
+                    <a href="/greenery" class="flex items-center">
                         <i class="fas fa-tree mr-3"></i>
                         <span>녹지</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 bg-yellow-600">
-                    <a href="power.html" class="flex items-center">
+                    <a href="/power" class="flex items-center">
                         <i class="fas fa-bolt mr-3"></i>
                         <span>전력</span>
                     </a>
                 </li>
                 <li class="px-6 py-3 hover:bg-gray-700">
-                    <a href="macc.html" class="flex items-center">
+                    <a href="/macc" class="flex items-center">
                         <i class="fas fa-chart-bar mr-3"></i>
                         <span>MACC</span>
                     </a>
@@ -151,9 +157,16 @@
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-2xl font-bold">전력</h1>
             <div class="flex items-center">
-                
-                
+                <button id="refreshBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-4">
+                    <i class="fas fa-sync-alt mr-2"></i>새로고침
+                </button>
             </div>
+        </div>
+
+        <!-- 에러 메시지 -->
+        <div id="errorMessage" class="error-message">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            <span id="errorText"></span>
         </div>
 
         <!-- 개요 -->
@@ -166,7 +179,7 @@
                     </div>
                     <div>
                         <p class="text-xs text-gray-500">연간 전력 사용량</p>
-                        <p id="annualPowerUsage" class="text-xl font-bold">3,456,789 kWh</p>
+                        <p id="annualPowerUsage" class="text-xl font-bold">- kWh</p>
                     </div>
                 </div>
                 <div class="flex items-center p-4 border rounded-lg">
@@ -175,7 +188,7 @@
                     </div>
                     <div>
                         <p class="text-xs text-gray-500">연간 탄소 배출량(tCO₂eq)</p>
-                        <p id="annualCarbonEmission" class="text-xl font-bold">1,570.8 tCO₂eq</p>
+                        <p id="annualCarbonEmission" class="text-xl font-bold">- tCO₂eq</p>
                     </div>
                 </div>
                 <div class="flex items-center p-4 border rounded-lg">
@@ -184,7 +197,7 @@
                     </div>
                     <div>
                         <p class="text-xs text-gray-500">최대 전력 사용 건물</p>
-                        <p id="maxPowerBuilding" class="text-xl font-bold">공학관 2동</p>
+                        <p id="maxPowerBuilding" class="text-xl font-bold">-</p>
                     </div>
                 </div>
             </div>
@@ -212,18 +225,18 @@
                 <h3 class="text-lg font-semibold">건물별 전력 사용량 히트맵</h3>
                 <div class="relative">
                     <select id="monthSelector" class="bg-white border rounded-md px-4 py-2 pr-8 appearance-none focus:outline-none">
-                        <option value="1">1월</option>
-                        <option value="2">2월</option>
-                        <option value="3">3월</option>
-                        <option value="4">4월</option>
-                        <option value="5">5월</option>
-                        <option value="6">6월</option>
-                        <option value="7">7월</option>
-                        <option value="8">8월</option>
-                        <option value="9">9월</option>
-                        <option value="10">10월</option>
-                        <option value="11">11월</option>
-                        <option value="12">12월</option>
+                        <option value="0">1월</option>
+                        <option value="1">2월</option>
+                        <option value="2">3월</option>
+                        <option value="3">4월</option>
+                        <option value="4">5월</option>
+                        <option value="5">6월</option>
+                        <option value="6">7월</option>
+                        <option value="7">8월</option>
+                        <option value="8">9월</option>
+                        <option value="9">10월</option>
+                        <option value="10">11월</option>
+                        <option value="11">12월</option>
                     </select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                         <i class="fas fa-chevron-down"></i>
@@ -233,14 +246,37 @@
             <div id="map"></div>
             <div id="legend" class="mt-4 p-3 bg-white rounded-md shadow">
                 <h4 class="font-bold text-sm mb-2">전력 사용량 (kWh)</h4>
-                <div class="flex items-center">
-                    <div class="flex-1 h-4 bg-gradient-to-r from-green-400 via-yellow-400 via-orange-400 to-red-500 rounded"></div>
+                <div class="flex items-center mb-2">
+                    <div class="flex-1 h-4 bg-gradient-to-r from-green-400 via-lime-400 via-yellow-400 via-orange-400 to-red-500 rounded"></div>
                 </div>
-                <div class="flex justify-between text-xs text-gray-600 mt-1">
-                    <span>낮음 (5,000)</span>
-                    <span>중간 (25,000)</span>
-                    <span>높음 (45,000)</span>
+                <div class="flex justify-between text-xs text-gray-600 mb-3">
+                    <span>낮음</span>
+                    <span>보통</span>
+                    <span>높음</span>
                 </div>
+                <div class="grid grid-cols-5 gap-2 text-xs">
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 rounded-full bg-green-400 mr-1"></div>
+                        <span>최하위</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 rounded-full bg-lime-400 mr-1"></div>
+                        <span>하위</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 rounded-full bg-yellow-400 mr-1"></div>
+                        <span>중간</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 rounded-full bg-orange-400 mr-1"></div>
+                        <span>상위</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 rounded-full bg-red-500 mr-1"></div>
+                        <span>최상위</span>
+                    </div>
+                </div>
+                
             </div>
         </div>
     </div>
@@ -260,681 +296,347 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        // 월별 건물 데이터
-        const monthlyBuildingData = {
-            1: [
-                { name: '건축관', powerUsage: 28000, coords: [35.134748, 129.107899] },
-                { name: '공학1관', powerUsage: 45000, coords: [35.131679, 129.103428] },
-                { name: '대학극장', powerUsage: 15000, coords: [35.132405, 129.104985] },
-                { name: '동원장보고관', powerUsage: 18000, coords: [35.133166, 129.102866] },
-                { name: '복합교육센터', powerUsage: 32000, coords: [35.132779, 129.106948] },
-                { name: '학술정보관', powerUsage: 35000, coords: [35.132641, 129.103815] },
-                { name: '컨벤션홀', powerUsage: 12000, coords: [35.132844, 129.102910] },
-                { name: '가온관', powerUsage: 22000, coords: [35.134045, 129.104830] },
-                { name: '공학2관', powerUsage: 38000, coords: [35.131286, 129.103137] },
-                { name: '나래관', powerUsage: 25000, coords: [35.134911, 129.101809] },
-                { name: '나비센터', powerUsage: 16000, coords: [35.134133, 129.106488] },
-                { name: '누리관', powerUsage: 30000, coords: [35.134827, 129.103099] },
-                { name: '대학본부', powerUsage: 20000, coords: [35.134059, 129.103185] },
-                { name: '디자인관', powerUsage: 14000, coords: [35.134313, 129.101553] },
-                { name: '미래관', powerUsage: 26000, coords: [35.134012, 129.102199] },
-                { name: '선박공작실', powerUsage: 8000, coords: [35.132882, 129.107315] },
-                { name: '수산과학관', powerUsage: 31000, coords: [35.133572, 129.107802] },
-                { name: '수산질병관리원', powerUsage: 9000, coords: [35.133793, 129.108658] },
-                { name: '수조실험동', powerUsage: 11000, coords: [35.133139, 129.107689] },
-                { name: '아름관', powerUsage: 33000, coords: [35.132920, 129.107847] },
-                { name: '안전관리관', powerUsage: 7000, coords: [35.132420, 129.105205] },
-                { name: '양어장관리사', powerUsage: 5000, coords: [35.133130, 129.101537] },
-                { name: '웅비관', powerUsage: 27000, coords: [35.134470, 129.103140] },
-                { name: '위드센터', powerUsage: 19000, coords: [35.134038, 129.105651] },
-                { name: '인문사회경영관', powerUsage: 34000, coords: [35.134129, 129.108128] },
-                { name: '자연과학1관', powerUsage: 40000, coords: [35.135587, 129.105754] },
-                { name: '자연과학2관', powerUsage: 37000, coords: [35.135713, 129.107640] },
-                { name: '장영실관', powerUsage: 29000, coords: [35.134871, 129.108928] },
-                { name: '청운관', powerUsage: 21000, coords: [35.134490, 129.104771] },
-                { name: '체육관', powerUsage: 17000, coords: [35.133123, 129.104938] },
-                { name: '충무관', powerUsage: 36000, coords: [35.135084, 129.105220] },
-                { name: '한솔관', powerUsage: 13000, coords: [35.131666, 129.104675] },
-                { name: '한울관', powerUsage: 24000, coords: [35.132351, 129.106979] },
-                { name: '해양공동연구관', powerUsage: 42000, coords: [35.135461, 129.108724] },
-                { name: '해양수산 격리사육동', powerUsage: 6000, coords: [35.133041, 129.107499] },
-                { name: '향파관', powerUsage: 39000, coords: [35.135358, 129.103002] },
-                { name: '수상레저관', powerUsage: 10000, coords: [35.132666, 129.104900] },
-                { name: '호연관', powerUsage: 41000, coords: [35.135289, 129.107638] },
-                { name: '환경해양관', powerUsage: 35000, coords: [35.135044, 129.106259] }
-            ],
-            2: [
-                { name: '건축관', powerUsage: 26000, coords: [35.134748, 129.107899] },
-                { name: '공학1관', powerUsage: 42000, coords: [35.131679, 129.103428] },
-                { name: '대학극장', powerUsage: 14000, coords: [35.132405, 129.104985] },
-                { name: '동원장보고관', powerUsage: 17000, coords: [35.133166, 129.102866] },
-                { name: '복합교육센터', powerUsage: 30000, coords: [35.132779, 129.106948] },
-                { name: '학술정보관', powerUsage: 33000, coords: [35.132641, 129.103815] },
-                { name: '컨벤션홀', powerUsage: 11000, coords: [35.132844, 129.102910] },
-                { name: '가온관', powerUsage: 20000, coords: [35.134045, 129.104830] },
-                { name: '공학2관', powerUsage: 36000, coords: [35.131286, 129.103137] },
-                { name: '나래관', powerUsage: 23000, coords: [35.134911, 129.101809] },
-                { name: '나비센터', powerUsage: 15000, coords: [35.134133, 129.106488] },
-                { name: '누리관', powerUsage: 28000, coords: [35.134827, 129.103099] },
-                { name: '대학본부', powerUsage: 18000, coords: [35.134059, 129.103185] },
-                { name: '디자인관', powerUsage: 13000, coords: [35.134313, 129.101553] },
-                { name: '미래관', powerUsage: 24000, coords: [35.134012, 129.102199] },
-                { name: '선박공작실', powerUsage: 7500, coords: [35.132882, 129.107315] },
-                { name: '수산과학관', powerUsage: 29000, coords: [35.133572, 129.107802] },
-                { name: '수산질병관리원', powerUsage: 8500, coords: [35.133793, 129.108658] },
-                { name: '수조실험동', powerUsage: 10000, coords: [35.133139, 129.107689] },
-                { name: '아름관', powerUsage: 31000, coords: [35.132920, 129.107847] },
-                { name: '안전관리관', powerUsage: 6500, coords: [35.132420, 129.105205] },
-                { name: '양어장관리사', powerUsage: 4500, coords: [35.133130, 129.101537] },
-                { name: '웅비관', powerUsage: 25000, coords: [35.134470, 129.103140] },
-                { name: '위드센터', powerUsage: 17000, coords: [35.134038, 129.105651] },
-                { name: '인문사회경영관', powerUsage: 32000, coords: [35.134129, 129.108128] },
-                { name: '자연과학1관', powerUsage: 38000, coords: [35.135587, 129.105754] },
-                { name: '자연과학2관', powerUsage: 35000, coords: [35.135713, 129.107640] },
-                { name: '장영실관', powerUsage: 27000, coords: [35.134871, 129.108928] },
-                { name: '청운관', powerUsage: 19000, coords: [35.134490, 129.104771] },
-                { name: '체육관', powerUsage: 16000, coords: [35.133123, 129.104938] },
-                { name: '충무관', powerUsage: 34000, coords: [35.135084, 129.105220] },
-                { name: '한솔관', powerUsage: 12000, coords: [35.131666, 129.104675] },
-                { name: '한울관', powerUsage: 22000, coords: [35.132351, 129.106979] },
-                { name: '해양공동연구관', powerUsage: 40000, coords: [35.135461, 129.108724] },
-                { name: '해양수산 격리사육동', powerUsage: 5500, coords: [35.133041, 129.107499] },
-                { name: '향파관', powerUsage: 37000, coords: [35.135358, 129.103002] },
-                { name: '수상레저관', powerUsage: 9000, coords: [35.132666, 129.104900] },
-                { name: '호연관', powerUsage: 39000, coords: [35.135289, 129.107638] },
-                { name: '환경해양관', powerUsage: 33000, coords: [35.135044, 129.106259] }
-            ],
-            3: [
-                { name: '건축관', powerUsage: 30000, coords: [35.134748, 129.107899] },
-                { name: '공학1관', powerUsage: 47000, coords: [35.131679, 129.103428] },
-                { name: '대학극장', powerUsage: 16000, coords: [35.132405, 129.104985] },
-                { name: '동원장보고관', powerUsage: 19000, coords: [35.133166, 129.102866] },
-                { name: '복합교육센터', powerUsage: 34000, coords: [35.132779, 129.106948] },
-                { name: '학술정보관', powerUsage: 37000, coords: [35.132641, 129.103815] },
-                { name: '컨벤션홀', powerUsage: 13000, coords: [35.132844, 129.102910] },
-                { name: '가온관', powerUsage: 24000, coords: [35.134045, 129.104830] },
-                { name: '공학2관', powerUsage: 40000, coords: [35.131286, 129.103137] },
-                { name: '나래관', powerUsage: 27000, coords: [35.134911, 129.101809] },
-                { name: '나비센터', powerUsage: 17000, coords: [35.134133, 129.106488] },
-                { name: '누리관', powerUsage: 32000, coords: [35.134827, 129.103099] },
-                { name: '대학본부', powerUsage: 22000, coords: [35.134059, 129.103185] },
-                { name: '디자인관', powerUsage: 15000, coords: [35.134313, 129.101553] },
-                { name: '미래관', powerUsage: 28000, coords: [35.134012, 129.102199] },
-                { name: '선박공작실', powerUsage: 9000, coords: [35.132882, 129.107315] },
-                { name: '수산과학관', powerUsage: 33000, coords: [35.133572, 129.107802] },
-                { name: '수산질병관리원', powerUsage: 10000, coords: [35.133793, 129.108658] },
-                { name: '수조실험동', powerUsage: 12000, coords: [35.133139, 129.107689] },
-                { name: '아름관', powerUsage: 35000, coords: [35.132920, 129.107847] },
-                { name: '안전관리관', powerUsage: 8000, coords: [35.132420, 129.105205] },
-                { name: '양어장관리사', powerUsage: 5500, coords: [35.133130, 129.101537] },
-                { name: '웅비관', powerUsage: 29000, coords: [35.134470, 129.103140] },
-                { name: '위드센터', powerUsage: 21000, coords: [35.134038, 129.105651] },
-                { name: '인문사회경영관', powerUsage: 36000, coords: [35.134129, 129.108128] },
-                { name: '자연과학1관', powerUsage: 42000, coords: [35.135587, 129.105754] },
-                { name: '자연과학2관', powerUsage: 39000, coords: [35.135713, 129.107640] },
-                { name: '장영실관', powerUsage: 31000, coords: [35.134871, 129.108928] },
-                { name: '청운관', powerUsage: 23000, coords: [35.134490, 129.104771] },
-                { name: '체육관', powerUsage: 18000, coords: [35.133123, 129.104938] },
-                { name: '충무관', powerUsage: 38000, coords: [35.135084, 129.105220] },
-                { name: '한솔관', powerUsage: 14000, coords: [35.131666, 129.104675] },
-                { name: '한울관', powerUsage: 26000, coords: [35.132351, 129.106979] },
-                { name: '해양공동연구관', powerUsage: 44000, coords: [35.135461, 129.108724] },
-                { name: '해양수산 격리사육동', powerUsage: 7000, coords: [35.133041, 129.107499] },
-                { name: '향파관', powerUsage: 41000, coords: [35.135358, 129.103002] },
-                { name: '수상레저관', powerUsage: 11000, coords: [35.132666, 129.104900] },
-                { name: '호연관', powerUsage: 43000, coords: [35.135289, 129.107638] },
-                { name: '환경해양관', powerUsage: 37000, coords: [35.135044, 129.106259] }
-            ],
-            4: [
-                { name: '건축관', powerUsage: 32000, coords: [35.134748, 129.107899] },
-                { name: '공학1관', powerUsage: 49000, coords: [35.131679, 129.103428] },
-                { name: '대학극장', powerUsage: 17000, coords: [35.132405, 129.104985] },
-                { name: '동원장보고관', powerUsage: 20000, coords: [35.133166, 129.102866] },
-                { name: '복합교육센터', powerUsage: 36000, coords: [35.132779, 129.106948] },
-                { name: '학술정보관', powerUsage: 39000, coords: [35.132641, 129.103815] },
-                { name: '컨벤션홀', powerUsage: 14000, coords: [35.132844, 129.102910] },
-                { name: '가온관', powerUsage: 26000, coords: [35.134045, 129.104830] },
-                { name: '공학2관', powerUsage: 42000, coords: [35.131286, 129.103137] },
-                { name: '나래관', powerUsage: 29000, coords: [35.134911, 129.101809] },
-                { name: '나비센터', powerUsage: 18000, coords: [35.134133, 129.106488] },
-                { name: '누리관', powerUsage: 34000, coords: [35.134827, 129.103099] },
-                { name: '대학본부', powerUsage: 24000, coords: [35.134059, 129.103185] },
-                { name: '디자인관', powerUsage: 16000, coords: [35.134313, 129.101553] },
-                { name: '미래관', powerUsage: 30000, coords: [35.134012, 129.102199] },
-                { name: '선박공작실', powerUsage: 10000, coords: [35.132882, 129.107315] },
-                { name: '수산과학관', powerUsage: 35000, coords: [35.133572, 129.107802] },
-                { name: '수산질병관리원', powerUsage: 11000, coords: [35.133793, 129.108658] },
-                { name: '수조실험동', powerUsage: 13000, coords: [35.133139, 129.107689] },
-                { name: '아름관', powerUsage: 37000, coords: [35.132920, 129.107847] },
-                { name: '안전관리관', powerUsage: 9000, coords: [35.132420, 129.105205] },
-                { name: '양어장관리사', powerUsage: 6000, coords: [35.133130, 129.101537] },
-                { name: '웅비관', powerUsage: 31000, coords: [35.134470, 129.103140] },
-                { name: '위드센터', powerUsage: 23000, coords: [35.134038, 129.105651] },
-                { name: '인문사회경영관', powerUsage: 38000, coords: [35.134129, 129.108128] },
-                { name: '자연과학1관', powerUsage: 44000, coords: [35.135587, 129.105754] },
-                { name: '자연과학2관', powerUsage: 41000, coords: [35.135713, 129.107640] },
-                { name: '장영실관', powerUsage: 33000, coords: [35.134871, 129.108928] },
-                { name: '청운관', powerUsage: 25000, coords: [35.134490, 129.104771] },
-                { name: '체육관', powerUsage: 19000, coords: [35.133123, 129.104938] },
-                { name: '충무관', powerUsage: 40000, coords: [35.135084, 129.105220] },
-                { name: '한솔관', powerUsage: 15000, coords: [35.131666, 129.104675] },
-                { name: '한울관', powerUsage: 28000, coords: [35.132351, 129.106979] },
-                { name: '해양공동연구관', powerUsage: 46000, coords: [35.135461, 129.108724] },
-                { name: '해양수산 격리사육동', powerUsage: 8000, coords: [35.133041, 129.107499] },
-                { name: '향파관', powerUsage: 43000, coords: [35.135358, 129.103002] },
-                { name: '수상레저관', powerUsage: 12000, coords: [35.132666, 129.104900] },
-                { name: '호연관', powerUsage: 45000, coords: [35.135289, 129.107638] },
-                { name: '환경해양관', powerUsage: 39000, coords: [35.135044, 129.106259] }
-            ],
-            5: [
-                { name: '건축관', powerUsage: 35000, coords: [35.134748, 129.107899] },
-                { name: '공학1관', powerUsage: 52000, coords: [35.131679, 129.103428] },
-                { name: '대학극장', powerUsage: 18000, coords: [35.132405, 129.104985] },
-                { name: '동원장보고관', powerUsage: 22000, coords: [35.133166, 129.102866] },
-                { name: '복합교육센터', powerUsage: 38000, coords: [35.132779, 129.106948] },
-                { name: '학술정보관', powerUsage: 41000, coords: [35.132641, 129.103815] },
-                { name: '컨벤션홀', powerUsage: 15000, coords: [35.132844, 129.102910] },
-                { name: '가온관', powerUsage: 28000, coords: [35.134045, 129.104830] },
-                { name: '공학2관', powerUsage: 44000, coords: [35.131286, 129.103137] },
-                { name: '나래관', powerUsage: 31000, coords: [35.134911, 129.101809] },
-                { name: '나비센터', powerUsage: 20000, coords: [35.134133, 129.106488] },
-                { name: '누리관', powerUsage: 36000, coords: [35.134827, 129.103099] },
-                { name: '대학본부', powerUsage: 26000, coords: [35.134059, 129.103185] },
-                { name: '디자인관', powerUsage: 17000, coords: [35.134313, 129.101553] },
-                { name: '미래관', powerUsage: 32000, coords: [35.134012, 129.102199] },
-                { name: '선박공작실', powerUsage: 11000, coords: [35.132882, 129.107315] },
-                { name: '수산과학관', powerUsage: 37000, coords: [35.133572, 129.107802] },
-                { name: '수산질병관리원', powerUsage: 12000, coords: [35.133793, 129.108658] },
-                { name: '수조실험동', powerUsage: 14000, coords: [35.133139, 129.107689] },
-                { name: '아름관', powerUsage: 39000, coords: [35.132920, 129.107847] },
-                { name: '안전관리관', powerUsage: 10000, coords: [35.132420, 129.105205] },
-                { name: '양어장관리사', powerUsage: 6500, coords: [35.133130, 129.101537] },
-                { name: '웅비관', powerUsage: 33000, coords: [35.134470, 129.103140] },
-                { name: '위드센터', powerUsage: 25000, coords: [35.134038, 129.105651] },
-                { name: '인문사회경영관', powerUsage: 40000, coords: [35.134129, 129.108128] },
-                { name: '자연과학1관', powerUsage: 46000, coords: [35.135587, 129.105754] },
-                { name: '자연과학2관', powerUsage: 43000, coords: [35.135713, 129.107640] },
-                { name: '장영실관', powerUsage: 35000, coords: [35.134871, 129.108928] },
-                { name: '청운관', powerUsage: 27000, coords: [35.134490, 129.104771] },
-                { name: '체육관', powerUsage: 21000, coords: [35.133123, 129.104938] },
-                { name: '충무관', powerUsage: 42000, coords: [35.135084, 129.105220] },
-                { name: '한솔관', powerUsage: 16000, coords: [35.131666, 129.104675] },
-                { name: '한울관', powerUsage: 30000, coords: [35.132351, 129.106979] },
-                { name: '해양공동연구관', powerUsage: 48000, coords: [35.135461, 129.108724] },
-                { name: '해양수산 격리사육동', powerUsage: 9000, coords: [35.133041, 129.107499] },
-                { name: '향파관', powerUsage: 45000, coords: [35.135358, 129.103002] },
-                { name: '수상레저관', powerUsage: 13000, coords: [35.132666, 129.104900] },
-                { name: '호연관', powerUsage: 47000, coords: [35.135289, 129.107638] },
-                { name: '환경해양관', powerUsage: 41000, coords: [35.135044, 129.106259] }
-            ],
-            6: [
-                { name: '건축관', powerUsage: 38000, coords: [35.134748, 129.107899] },
-                { name: '공학1관', powerUsage: 55000, coords: [35.131679, 129.103428] },
-                { name: '대학극장', powerUsage: 19000, coords: [35.132405, 129.104985] },
-                { name: '동원장보고관', powerUsage: 24000, coords: [35.133166, 129.102866] },
-                { name: '복합교육센터', powerUsage: 40000, coords: [35.132779, 129.106948] },
-                { name: '학술정보관', powerUsage: 43000, coords: [35.132641, 129.103815] },
-                { name: '컨벤션홀', powerUsage: 16000, coords: [35.132844, 129.102910] },
-                { name: '가온관', powerUsage: 30000, coords: [35.134045, 129.104830] },
-                { name: '공학2관', powerUsage: 46000, coords: [35.131286, 129.103137] },
-                { name: '나래관', powerUsage: 33000, coords: [35.134911, 129.101809] },
-                { name: '나비센터', powerUsage: 22000, coords: [35.134133, 129.106488] },
-                { name: '누리관', powerUsage: 38000, coords: [35.134827, 129.103099] },
-                { name: '대학본부', powerUsage: 28000, coords: [35.134059, 129.103185] },
-                { name: '디자인관', powerUsage: 18000, coords: [35.134313, 129.101553] },
-                { name: '미래관', powerUsage: 34000, coords: [35.134012, 129.102199] },
-                { name: '선박공작실', powerUsage: 12000, coords: [35.132882, 129.107315] },
-                { name: '수산과학관', powerUsage: 39000, coords: [35.133572, 129.107802] },
-                { name: '수산질병관리원', powerUsage: 13000, coords: [35.133793, 129.108658] },
-                { name: '수조실험동', powerUsage: 15000, coords: [35.133139, 129.107689] },
-                { name: '아름관', powerUsage: 41000, coords: [35.132920, 129.107847] },
-                { name: '안전관리관', powerUsage: 11000, coords: [35.132420, 129.105205] },
-                { name: '양어장관리사', powerUsage: 7000, coords: [35.133130, 129.101537] },
-                { name: '웅비관', powerUsage: 35000, coords: [35.134470, 129.103140] },
-                { name: '위드센터', powerUsage: 27000, coords: [35.134038, 129.105651] },
-                { name: '인문사회경영관', powerUsage: 42000, coords: [35.134129, 129.108128] },
-                { name: '자연과학1관', powerUsage: 48000, coords: [35.135587, 129.105754] },
-                { name: '자연과학2관', powerUsage: 45000, coords: [35.135713, 129.107640] },
-                { name: '장영실관', powerUsage: 37000, coords: [35.134871, 129.108928] },
-                { name: '청운관', powerUsage: 29000, coords: [35.134490, 129.104771] },
-                { name: '체육관', powerUsage: 23000, coords: [35.133123, 129.104938] },
-                { name: '충무관', powerUsage: 44000, coords: [35.135084, 129.105220] },
-                { name: '한솔관', powerUsage: 17000, coords: [35.131666, 129.104675] },
-                { name: '한울관', powerUsage: 32000, coords: [35.132351, 129.106979] },
-                { name: '해양공동연구관', powerUsage: 50000, coords: [35.135461, 129.108724] },
-                { name: '해양수산 격리사육동', powerUsage: 10000, coords: [35.133041, 129.107499] },
-                { name: '향파관', powerUsage: 47000, coords: [35.135358, 129.103002] },
-                { name: '수상레저관', powerUsage: 14000, coords: [35.132666, 129.104900] },
-                { name: '호연관', powerUsage: 49000, coords: [35.135289, 129.107638] },
-                { name: '환경해양관', powerUsage: 43000, coords: [35.135044, 129.106259] }
-            ],
-            7: [
-                { name: '건축관', powerUsage: 42000, coords: [35.134748, 129.107899] },
-                { name: '공학1관', powerUsage: 58000, coords: [35.131679, 129.103428] },
-                { name: '대학극장', powerUsage: 8000, coords: [35.132405, 129.104985] },
-                { name: '동원장보고관', powerUsage: 12000, coords: [35.133166, 129.102866] },
-                { name: '복합교육센터', powerUsage: 20000, coords: [35.132779, 129.106948] },
-                { name: '학술정보관', powerUsage: 25000, coords: [35.132641, 129.103815] },
-                { name: '컨벤션홀', powerUsage: 7000, coords: [35.132844, 129.102910] },
-                { name: '가온관', powerUsage: 15000, coords: [35.134045, 129.104830] },
-                { name: '공학2관', powerUsage: 30000, coords: [35.131286, 129.103137] },
-                { name: '나래관', powerUsage: 18000, coords: [35.134911, 129.101809] },
-                { name: '나비센터', powerUsage: 12000, coords: [35.134133, 129.106488] },
-                { name: '누리관', powerUsage: 22000, coords: [35.134827, 129.103099] },
-                { name: '대학본부', powerUsage: 16000, coords: [35.134059, 129.103185] },
-                { name: '디자인관', powerUsage: 10000, coords: [35.134313, 129.101553] },
-                { name: '미래관', powerUsage: 19000, coords: [35.134012, 129.102199] },
-                { name: '선박공작실', powerUsage: 8000, coords: [35.132882, 129.107315] },
-                { name: '수산과학관', powerUsage: 24000, coords: [35.133572, 129.107802] },
-                { name: '수산질병관리원', powerUsage: 9000, coords: [35.133793, 129.108658] },
-                { name: '수조실험동', powerUsage: 11000, coords: [35.133139, 129.107689] },
-                { name: '아름관', powerUsage: 26000, coords: [35.132920, 129.107847] },
-                { name: '안전관리관', powerUsage: 7000, coords: [35.132420, 129.105205] },
-                { name: '양어장관리사', powerUsage: 4000, coords: [35.133130, 129.101537] },
-                { name: '웅비관', powerUsage: 21000, coords: [35.134470, 129.103140] },
-                { name: '위드센터', powerUsage: 14000, coords: [35.134038, 129.105651] },
-                { name: '인문사회경영관', powerUsage: 28000, coords: [35.134129, 129.108128] },
-                { name: '자연과학1관', powerUsage: 32000, coords: [35.135587, 129.105754] },
-                { name: '자연과학2관', powerUsage: 29000, coords: [35.135713, 129.107640] },
-                { name: '장영실관', powerUsage: 23000, coords: [35.134871, 129.108928] },
-                { name: '청운관', powerUsage: 17000, coords: [35.134490, 129.104771] },
-                { name: '체육관', powerUsage: 13000, coords: [35.133123, 129.104938] },
-                { name: '충무관', powerUsage: 30000, coords: [35.135084, 129.105220] },
-                { name: '한솔관', powerUsage: 11000, coords: [35.131666, 129.104675] },
-                { name: '한울관', powerUsage: 18000, coords: [35.132351, 129.106979] },
-                { name: '해양공동연구관', powerUsage: 34000, coords: [35.135461, 129.108724] },
-                { name: '해양수산 격리사육동', powerUsage: 6000, coords: [35.133041, 129.107499] },
-                { name: '향파관', powerUsage: 31000, coords: [35.135358, 129.103002] },
-                { name: '수상레저관', powerUsage: 9000, coords: [35.132666, 129.104900] },
-                { name: '호연관', powerUsage: 33000, coords: [35.135289, 129.107638] },
-                { name: '환경해양관', powerUsage: 27000, coords: [35.135044, 129.106259] }
-            ],
-            8: [
-                { name: '건축관', powerUsage: 40000, coords: [35.134748, 129.107899] },
-                { name: '공학1관', powerUsage: 56000, coords: [35.131679, 129.103428] },
-                { name: '대학극장', powerUsage: 7000, coords: [35.132405, 129.104985] },
-                { name: '동원장보고관', powerUsage: 11000, coords: [35.133166, 129.102866] },
-                { name: '복합교육센터', powerUsage: 18000, coords: [35.132779, 129.106948] },
-                { name: '학술정보관', powerUsage: 23000, coords: [35.132641, 129.103815] },
-                { name: '컨벤션홀', powerUsage: 6000, coords: [35.132844, 129.102910] },
-                { name: '가온관', powerUsage: 13000, coords: [35.134045, 129.104830] },
-                { name: '공학2관', powerUsage: 28000, coords: [35.131286, 129.103137] },
-                { name: '나래관', powerUsage: 16000, coords: [35.134911, 129.101809] },
-                { name: '나비센터', powerUsage: 10000, coords: [35.134133, 129.106488] },
-                { name: '누리관', powerUsage: 20000, coords: [35.134827, 129.103099] },
-                { name: '대학본부', powerUsage: 14000, coords: [35.134059, 129.103185] },
-                { name: '디자인관', powerUsage: 8000, coords: [35.134313, 129.101553] },
-                { name: '미래관', powerUsage: 17000, coords: [35.134012, 129.102199] },
-                { name: '선박공작실', powerUsage: 6000, coords: [35.132882, 129.107315] },
-                { name: '수산과학관', powerUsage: 22000, coords: [35.133572, 129.107802] },
-                { name: '수산질병관리원', powerUsage: 7000, coords: [35.133793, 129.108658] },
-                { name: '수조실험동', powerUsage: 9000, coords: [35.133139, 129.107689] },
-                { name: '아름관', powerUsage: 24000, coords: [35.132920, 129.107847] },
-                { name: '안전관리관', powerUsage: 5000, coords: [35.132420, 129.105205] },
-                { name: '양어장관리사', powerUsage: 3000, coords: [35.133130, 129.101537] },
-                { name: '웅비관', powerUsage: 19000, coords: [35.134470, 129.103140] },
-                { name: '위드센터', powerUsage: 12000, coords: [35.134038, 129.105651] },
-                { name: '인문사회경영관', powerUsage: 26000, coords: [35.134129, 129.108128] },
-                { name: '자연과학1관', powerUsage: 30000, coords: [35.135587, 129.105754] },
-                { name: '자연과학2관', powerUsage: 27000, coords: [35.135713, 129.107640] },
-                { name: '장영실관', powerUsage: 21000, coords: [35.134871, 129.108928] },
-                { name: '청운관', powerUsage: 15000, coords: [35.134490, 129.104771] },
-                { name: '체육관', powerUsage: 11000, coords: [35.133123, 129.104938] },
-                { name: '충무관', powerUsage: 28000, coords: [35.135084, 129.105220] },
-                { name: '한솔관', powerUsage: 9000, coords: [35.131666, 129.104675] },
-                { name: '한울관', powerUsage: 16000, coords: [35.132351, 129.106979] },
-                { name: '해양공동연구관', powerUsage: 32000, coords: [35.135461, 129.108724] },
-                { name: '해양수산 격리사육동', powerUsage: 4000, coords: [35.133041, 129.107499] },
-                { name: '향파관', powerUsage: 29000, coords: [35.135358, 129.103002] },
-                { name: '수상레저관', powerUsage: 7000, coords: [35.132666, 129.104900] },
-                { name: '호연관', powerUsage: 31000, coords: [35.135289, 129.107638] },
-                { name: '환경해양관', powerUsage: 25000, coords: [35.135044, 129.106259] }
-            ],
-            9: [
-                { name: '건축관', powerUsage: 34000, coords: [35.134748, 129.107899] },
-                { name: '공학1관', powerUsage: 50000, coords: [35.131679, 129.103428] },
-                { name: '대학극장', powerUsage: 16000, coords: [35.132405, 129.104985] },
-                { name: '동원장보고관', powerUsage: 20000, coords: [35.133166, 129.102866] },
-                { name: '복합교육센터', powerUsage: 35000, coords: [35.132779, 129.106948] },
-                { name: '학술정보관', powerUsage: 38000, coords: [35.132641, 129.103815] },
-                { name: '컨벤션홀', powerUsage: 14000, coords: [35.132844, 129.102910] },
-                { name: '가온관', powerUsage: 25000, coords: [35.134045, 129.104830] },
-                { name: '공학2관', powerUsage: 41000, coords: [35.131286, 129.103137] },
-                { name: '나래관', powerUsage: 28000, coords: [35.134911, 129.101809] },
-                { name: '나비센터', powerUsage: 19000, coords: [35.134133, 129.106488] },
-                { name: '누리관', powerUsage: 33000, coords: [35.134827, 129.103099] },
-                { name: '대학본부', powerUsage: 23000, coords: [35.134059, 129.103185] },
-                { name: '디자인관', powerUsage: 15000, coords: [35.134313, 129.101553] },
-                { name: '미래관', powerUsage: 29000, coords: [35.134012, 129.102199] },
-                { name: '선박공작실', powerUsage: 10000, coords: [35.132882, 129.107315] },
-                { name: '수산과학관', powerUsage: 34000, coords: [35.133572, 129.107802] },
-                { name: '수산질병관리원', powerUsage: 11000, coords: [35.133793, 129.108658] },
-                { name: '수조실험동', powerUsage: 13000, coords: [35.133139, 129.107689] },
-                { name: '아름관', powerUsage: 36000, coords: [35.132920, 129.107847] },
-                { name: '안전관리관', powerUsage: 9000, coords: [35.132420, 129.105205] },
-                { name: '양어장관리사', powerUsage: 6000, coords: [35.133130, 129.101537] },
-                { name: '웅비관', powerUsage: 30000, coords: [35.134470, 129.103140] },
-                { name: '위드센터', powerUsage: 22000, coords: [35.134038, 129.105651] },
-                { name: '인문사회경영관', powerUsage: 37000, coords: [35.134129, 129.108128] },
-                { name: '자연과학1관', powerUsage: 43000, coords: [35.135587, 129.105754] },
-                { name: '자연과학2관', powerUsage: 40000, coords: [35.135713, 129.107640] },
-                { name: '장영실관', powerUsage: 32000, coords: [35.134871, 129.108928] },
-                { name: '청운관', powerUsage: 24000, coords: [35.134490, 129.104771] },
-                { name: '체육관', powerUsage: 18000, coords: [35.133123, 129.104938] },
-                { name: '충무관', powerUsage: 39000, coords: [35.135084, 129.105220] },
-                { name: '한솔관', powerUsage: 14000, coords: [35.131666, 129.104675] },
-                { name: '한울관', powerUsage: 27000, coords: [35.132351, 129.106979] },
-                { name: '해양공동연구관', powerUsage: 45000, coords: [35.135461, 129.108724] },
-                { name: '해양수산 격리사육동', powerUsage: 8000, coords: [35.133041, 129.107499] },
-                { name: '향파관', powerUsage: 42000, coords: [35.135358, 129.103002] },
-                { name: '수상레저관', powerUsage: 12000, coords: [35.132666, 129.104900] },
-                { name: '호연관', powerUsage: 44000, coords: [35.135289, 129.107638] },
-                { name: '환경해양관', powerUsage: 38000, coords: [35.135044, 129.106259] }
-            ],
-            10: [
-                { name: '건축관', powerUsage: 36000, coords: [35.134748, 129.107899] },
-                { name: '공학1관', powerUsage: 53000, coords: [35.131679, 129.103428] },
-                { name: '대학극장', powerUsage: 18000, coords: [35.132405, 129.104985] },
-                { name: '동원장보고관', powerUsage: 22000, coords: [35.133166, 129.102866] },
-                { name: '복합교육센터', powerUsage: 37000, coords: [35.132779, 129.106948] },
-                { name: '학술정보관', powerUsage: 40000, coords: [35.132641, 129.103815] },
-                { name: '컨벤션홀', powerUsage: 15000, coords: [35.132844, 129.102910] },
-                { name: '가온관', powerUsage: 27000, coords: [35.134045, 129.104830] },
-                { name: '공학2관', powerUsage: 43000, coords: [35.131286, 129.103137] },
-                { name: '나래관', powerUsage: 30000, coords: [35.134911, 129.101809] },
-                { name: '나비센터', powerUsage: 21000, coords: [35.134133, 129.106488] },
-                { name: '누리관', powerUsage: 35000, coords: [35.134827, 129.103099] },
-                { name: '대학본부', powerUsage: 25000, coords: [35.134059, 129.103185] },
-                { name: '디자인관', powerUsage: 17000, coords: [35.134313, 129.101553] },
-                { name: '미래관', powerUsage: 31000, coords: [35.134012, 129.102199] },
-                { name: '선박공작실', powerUsage: 11000, coords: [35.132882, 129.107315] },
-                { name: '수산과학관', powerUsage: 36000, coords: [35.133572, 129.107802] },
-                { name: '수산질병관리원', powerUsage: 12000, coords: [35.133793, 129.108658] },
-                { name: '수조실험동', powerUsage: 14000, coords: [35.133139, 129.107689] },
-                { name: '아름관', powerUsage: 38000, coords: [35.132920, 129.107847] },
-                { name: '안전관리관', powerUsage: 10000, coords: [35.132420, 129.105205] },
-                { name: '양어장관리사', powerUsage: 7000, coords: [35.133130, 129.101537] },
-                { name: '웅비관', powerUsage: 32000, coords: [35.134470, 129.103140] },
-                { name: '위드센터', powerUsage: 24000, coords: [35.134038, 129.105651] },
-                { name: '인문사회경영관', powerUsage: 39000, coords: [35.134129, 129.108128] },
-                { name: '자연과학1관', powerUsage: 45000, coords: [35.135587, 129.105754] },
-                { name: '자연과학2관', powerUsage: 42000, coords: [35.135713, 129.107640] },
-                { name: '장영실관', powerUsage: 34000, coords: [35.134871, 129.108928] },
-                { name: '청운관', powerUsage: 26000, coords: [35.134490, 129.104771] },
-                { name: '체육관', powerUsage: 20000, coords: [35.133123, 129.104938] },
-                { name: '충무관', powerUsage: 41000, coords: [35.135084, 129.105220] },
-                { name: '한솔관', powerUsage: 15000, coords: [35.131666, 129.104675] },
-                { name: '한울관', powerUsage: 29000, coords: [35.132351, 129.106979] },
-                { name: '해양공동연구관', powerUsage: 47000, coords: [35.135461, 129.108724] },
-                { name: '해양수산 격리사육동', powerUsage: 9000, coords: [35.133041, 129.107499] },
-                { name: '향파관', powerUsage: 44000, coords: [35.135358, 129.103002] },
-                { name: '수상레저관', powerUsage: 13000, coords: [35.132666, 129.104900] },
-                { name: '호연관', powerUsage: 46000, coords: [35.135289, 129.107638] },
-                { name: '환경해양관', powerUsage: 40000, coords: [35.135044, 129.106259] }
-            ],
-            11: [
-                { name: '건축관', powerUsage: 33000, coords: [35.134748, 129.107899] },
-                { name: '공학1관', powerUsage: 48000, coords: [35.131679, 129.103428] },
-                { name: '대학극장', powerUsage: 17000, coords: [35.132405, 129.104985] },
-                { name: '동원장보고관', powerUsage: 21000, coords: [35.133166, 129.102866] },
-                { name: '복합교육센터', powerUsage: 36000, coords: [35.132779, 129.106948] },
-                { name: '학술정보관', powerUsage: 39000, coords: [35.132641, 129.103815] },
-                { name: '컨벤션홀', powerUsage: 14000, coords: [35.132844, 129.102910] },
-                { name: '가온관', powerUsage: 26000, coords: [35.134045, 129.104830] },
-                { name: '공학2관', powerUsage: 42000, coords: [35.131286, 129.103137] },
-                { name: '나래관', powerUsage: 29000, coords: [35.134911, 129.101809] },
-                { name: '나비센터', powerUsage: 20000, coords: [35.134133, 129.106488] },
-                { name: '누리관', powerUsage: 34000, coords: [35.134827, 129.103099] },
-                { name: '대학본부', powerUsage: 24000, coords: [35.134059, 129.103185] },
-                { name: '디자인관', powerUsage: 16000, coords: [35.134313, 129.101553] },
-                { name: '미래관', powerUsage: 30000, coords: [35.134012, 129.102199] },
-                { name: '선박공작실', powerUsage: 10000, coords: [35.132882, 129.107315] },
-                { name: '수산과학관', powerUsage: 35000, coords: [35.133572, 129.107802] },
-                { name: '수산질병관리원', powerUsage: 11000, coords: [35.133793, 129.108658] },
-                { name: '수조실험동', powerUsage: 13000, coords: [35.133139, 129.107689] },
-                { name: '아름관', powerUsage: 37000, coords: [35.132920, 129.107847] },
-                { name: '안전관리관', powerUsage: 9000, coords: [35.132420, 129.105205] },
-                { name: '양어장관리사', powerUsage: 6000, coords: [35.133130, 129.101537] },
-                { name: '웅비관', powerUsage: 31000, coords: [35.134470, 129.103140] },
-                { name: '위드센터', powerUsage: 23000, coords: [35.134038, 129.105651] },
-                { name: '인문사회경영관', powerUsage: 38000, coords: [35.134129, 129.108128] },
-                { name: '자연과학1관', powerUsage: 44000, coords: [35.135587, 129.105754] },
-                { name: '자연과학2관', powerUsage: 41000, coords: [35.135713, 129.107640] },
-                { name: '장영실관', powerUsage: 33000, coords: [35.134871, 129.108928] },
-                { name: '청운관', powerUsage: 25000, coords: [35.134490, 129.104771] },
-                { name: '체육관', powerUsage: 19000, coords: [35.133123, 129.104938] },
-                { name: '충무관', powerUsage: 40000, coords: [35.135084, 129.105220] },
-                { name: '한솔관', powerUsage: 14000, coords: [35.131666, 129.104675] },
-                { name: '한울관', powerUsage: 28000, coords: [35.132351, 129.106979] },
-                { name: '해양공동연구관', powerUsage: 46000, coords: [35.135461, 129.108724] },
-                { name: '해양수산 격리사육동', powerUsage: 8000, coords: [35.133041, 129.107499] },
-                { name: '향파관', powerUsage: 43000, coords: [35.135358, 129.103002] },
-                { name: '수상레저관', powerUsage: 12000, coords: [35.132666, 129.104900] },
-                { name: '호연관', powerUsage: 45000, coords: [35.135289, 129.107638] },
-                { name: '환경해양관', powerUsage: 39000, coords: [35.135044, 129.106259] }
-            ],
-            12: [
-                { name: '건축관', powerUsage: 31000, coords: [35.134748, 129.107899] },
-                { name: '공학1관', powerUsage: 46000, coords: [35.131679, 129.103428] },
-                { name: '대학극장', powerUsage: 16000, coords: [35.132405, 129.104985] },
-                { name: '동원장보고관', powerUsage: 20000, coords: [35.133166, 129.102866] },
-                { name: '복합교육센터', powerUsage: 34000, coords: [35.132779, 129.106948] },
-                { name: '학술정보관', powerUsage: 37000, coords: [35.132641, 129.103815] },
-                { name: '컨벤션홀', powerUsage: 13000, coords: [35.132844, 129.102910] },
-                { name: '가온관', powerUsage: 24000, coords: [35.134045, 129.104830] },
-                { name: '공학2관', powerUsage: 40000, coords: [35.131286, 129.103137] },
-                { name: '나래관', powerUsage: 27000, coords: [35.134911, 129.101809] },
-                { name: '나비센터', powerUsage: 18000, coords: [35.134133, 129.106488] },
-                { name: '누리관', powerUsage: 32000, coords: [35.134827, 129.103099] },
-                { name: '대학본부', powerUsage: 22000, coords: [35.134059, 129.103185] },
-                { name: '디자인관', powerUsage: 14000, coords: [35.134313, 129.101553] },
-                { name: '미래관', powerUsage: 28000, coords: [35.134012, 129.102199] },
-                { name: '선박공작실', powerUsage: 9000, coords: [35.132882, 129.107315] },
-                { name: '수산과학관', powerUsage: 33000, coords: [35.133572, 129.107802] },
-                { name: '수산질병관리원', powerUsage: 10000, coords: [35.133793, 129.108658] },
-                { name: '수조실험동', powerUsage: 12000, coords: [35.133139, 129.107689] },
-                { name: '아름관', powerUsage: 35000, coords: [35.132920, 129.107847] },
-                { name: '안전관리관', powerUsage: 8000, coords: [35.132420, 129.105205] },
-                { name: '양어장관리사', powerUsage: 5000, coords: [35.133130, 129.101537] },
-                { name: '웅비관', powerUsage: 29000, coords: [35.134470, 129.103140] },
-                { name: '위드센터', powerUsage: 21000, coords: [35.134038, 129.105651] },
-                { name: '인문사회경영관', powerUsage: 36000, coords: [35.134129, 129.108128] },
-                { name: '자연과학1관', powerUsage: 42000, coords: [35.135587, 129.105754] },
-                { name: '자연과학2관', powerUsage: 39000, coords: [35.135713, 129.107640] },
-                { name: '장영실관', powerUsage: 31000, coords: [35.134871, 129.108928] },
-                { name: '청운관', powerUsage: 23000, coords: [35.134490, 129.104771] },
-                { name: '체육관', powerUsage: 17000, coords: [35.133123, 129.104938] },
-                { name: '충무관', powerUsage: 38000, coords: [35.135084, 129.105220] },
-                { name: '한솔관', powerUsage: 13000, coords: [35.131666, 129.104675] },
-                { name: '한울관', powerUsage: 26000, coords: [35.132351, 129.106979] },
-                { name: '해양공동연구관', powerUsage: 44000, coords: [35.135461, 129.108724] },
-                { name: '해양수산 격리사육동', powerUsage: 7000, coords: [35.133041, 129.107499] },
-                { name: '향파관', powerUsage: 41000, coords: [35.135358, 129.103002] },
-                { name: '수상레저관', powerUsage: 11000, coords: [35.132666, 129.104900] },
-                { name: '호연관', powerUsage: 43000, coords: [35.135289, 129.107638] },
-                { name: '환경해양관', powerUsage: 37000, coords: [35.135044, 129.106259] }
-            ]
+        // 건물 좌표 매핑 (CSV 컬럼명을 정확히 매칭)
+        const buildingCoordinates = {
+            '건축관': [35.134748, 129.107899],
+            '공학1관': [35.131679, 129.103428],
+            '대학극장': [35.132405, 129.104985],
+            '동원장보고관\t': [35.133166, 129.102866],
+            '복합교육센터\t': [35.132779, 129.106948],
+            '학술정보관\t': [35.132641, 129.103815],
+            '컨벤션홀\t': [35.132844, 129.102910],
+            '가온관\t': [35.134045, 129.104830],
+            '건축원실 및 창고': [35.134748, 129.107800],
+            '\t고가수조 및 펌프실': [35.133500, 129.105000],
+            '\t고형폐기물창고': [35.133200, 129.106000],
+            '\t공학2관\t': [35.131286, 129.103137],
+            '구 변전소': [35.133800, 129.105500],
+            '\t나래관\t': [35.134911, 129.101809],
+            '나비센터\t': [35.134133, 129.106488],
+            '누리관': [35.134827, 129.103099],
+            '\t단위변전실': [35.133600, 129.104500],
+            '\t대연위험물저장소': [35.133100, 129.107200],
+            '\t대학본부': [35.134059, 129.103185],
+            '\t디자인관': [35.134313, 129.101553],
+            '\t미래관\t': [35.134012, 129.102199],
+            '사료보관실': [35.133400, 129.107400],
+            '\t선박공작실': [35.132882, 129.107315],
+            '\t수산과학관\t': [35.133572, 129.107802],
+            '수산질병관리원\t': [35.133793, 129.108658],
+            '수위실\t': [35.133100, 129.108100],
+            '수조실험동': [35.133139, 129.107689],
+            '\t아름관': [35.132920, 129.107847],
+            '\t안전관리관': [35.132420, 129.105205],
+            '\t양어장관리사': [35.133130, 129.101537],
+            '\t양어장발전기실\t': [35.133130, 129.101500],
+            '양어장보일러실': [35.133130, 129.101600],
+            '\t웅비관\t': [35.134470, 129.103140],
+            '위드센터\t': [35.134038, 129.105651],
+            '인문사회경영관\t': [35.134129, 129.108128],
+            '자연과학1관\t': [35.135587, 129.105754],
+            '자연과학2관': [35.135713, 129.107640],
+            '\t장영실관\t': [35.134871, 129.108928],
+            '청운관\t': [35.134490, 129.104771],
+            '체육관': [35.133123, 129.104938],
+            '\t충무관': [35.135084, 129.105220],
+            '\t한솔관': [35.131666, 129.104675],
+            '\t한울관\t': [35.132351, 129.106979],
+            '해양공동연구관': [35.135461, 129.108724],
+            '\t해양수산 격리사육동\t': [35.133041, 129.107499],
+            '향파관\t': [35.135358, 129.103002],
+            '수상레저관\t': [35.132666, 129.104900],
+            '호연관': [35.135289, 129.107638],
+            '\t환경해양관\t': [35.135044, 129.106259]
         };
 
-        // 현재 선택된 월
-        let currentMonth = 1;
+        // 데이터 저장 변수
+        let currentMonth = 0;
         let currentMarkers = [];
-
-        // 월별 탄소배출량 계산 (kWh * 0.4541)
-        const monthlyEmissions = [
-            Math.round(Object.values(monthlyBuildingData[1]).reduce((sum, building) => sum + building.powerUsage, 0) * 0.4541 / 1000),
-            Math.round(Object.values(monthlyBuildingData[2]).reduce((sum, building) => sum + building.powerUsage, 0) * 0.4541 / 1000),
-            Math.round(Object.values(monthlyBuildingData[3]).reduce((sum, building) => sum + building.powerUsage, 0) * 0.4541 / 1000),
-            Math.round(Object.values(monthlyBuildingData[4]).reduce((sum, building) => sum + building.powerUsage, 0) * 0.4541 / 1000),
-            Math.round(Object.values(monthlyBuildingData[5]).reduce((sum, building) => sum + building.powerUsage, 0) * 0.4541 / 1000),
-            Math.round(Object.values(monthlyBuildingData[6]).reduce((sum, building) => sum + building.powerUsage, 0) * 0.4541 / 1000),
-            Math.round(Object.values(monthlyBuildingData[7]).reduce((sum, building) => sum + building.powerUsage, 0) * 0.4541 / 1000),
-            Math.round(Object.values(monthlyBuildingData[8]).reduce((sum, building) => sum + building.powerUsage, 0) * 0.4541 / 1000),
-            Math.round(Object.values(monthlyBuildingData[9]).reduce((sum, building) => sum + building.powerUsage, 0) * 0.4541 / 1000),
-            Math.round(Object.values(monthlyBuildingData[10]).reduce((sum, building) => sum + building.powerUsage, 0) * 0.4541 / 1000),
-            Math.round(Object.values(monthlyBuildingData[11]).reduce((sum, building) => sum + building.powerUsage, 0) * 0.4541 / 1000),
-            Math.round(Object.values(monthlyBuildingData[12]).reduce((sum, building) => sum + building.powerUsage, 0) * 0.4541 / 1000)
-        ];
+        let electricData = [];
+        let weeklyChart, monthlyChart;
 
         // 전력 사용량에 따른 색상 계산 함수
-        function getColor(powerUsage) {
-            // 0-60000kWh 범위를 0-1로 정규화
-            const normalized = Math.min(powerUsage / 60000, 1);
+        function getColor(powerUsage, maxUsage) {
+            if (maxUsage === 0) return '#22c55e';
             
-            if (normalized < 0.25) {
-                // 초록색
-                return `rgb(34, 197, 94)`;
-            } else if (normalized < 0.5) {
-                // 노란색
-                return `rgb(234, 179, 8)`;
-            } else if (normalized < 0.75) {
-                // 주황색
-                return `rgb(249, 115, 22)`;
+            const normalized = Math.min(powerUsage / maxUsage, 1);
+            
+            if (normalized < 0.2) {
+                return '#22c55e'; // 초록색
+            } else if (normalized < 0.4) {
+                return '#84cc16'; // 연두색
+            } else if (normalized < 0.6) {
+                return '#eab308'; // 노란색
+            } else if (normalized < 0.8) {
+                return '#f97316'; // 주황색
             } else {
-                // 빨간색
-                return `rgb(239, 68, 68)`;
+                return '#ef4444'; // 빨간색
             }
         }
 
+        // 마커 크기 계산 함수 (로그 스케일 적용)
+        function getMarkerSize(powerUsage, maxUsage, minUsage) {
+            if (maxUsage === 0 || powerUsage === 0) return 8;
+            
+            // 로그 스케일을 사용하여 큰 값과 작은 값의 차이를 줄임
+            const logMax = Math.log(maxUsage + 1);
+            const logMin = Math.log(minUsage + 1);
+            const logValue = Math.log(powerUsage + 1);
+            
+            // 정규화 (0~1)
+            const normalized = (logValue - logMin) / (logMax - logMin);
+            
+            // 8~18 픽셀 범위로 매핑
+            return Math.max(8, Math.min(18, 8 + normalized * 10));
+        }
+
         // 건물 마커 업데이트 함수
-        function updateBuildingMarkers(month) {
+        function updateBuildingMarkers(monthIndex) {
             // 기존 마커 제거
             currentMarkers.forEach(marker => {
                 map.removeLayer(marker);
             });
             currentMarkers = [];
 
-            const buildings = monthlyBuildingData[month];
+            if (electricData.length === 0 || !electricData[monthIndex]) return;
+
+            const monthData = electricData[monthIndex];
+            const buildingData = [];
             
-            buildings.forEach(building => {
-                const color = getColor(building.powerUsage);
-                
-                // 원형 마커 생성
-                const marker = L.circleMarker(building.coords, {
-                    radius: Math.max(8, building.powerUsage / 3000), // 사용량에 따른 크기
-                    fillColor: color,
-                    color: '#fff',
-                    weight: 2,
-                    opacity: 1,
-                    fillOpacity: 0.8
-                }).addTo(map);
-                
-                // 팝업 추가
-                marker.bindPopup(`
-                    <div class="p-2">
-                        <h3 class="font-bold text-lg">${building.name}</h3>
-                        <p class="text-sm">전력 사용량: ${building.powerUsage.toLocaleString()} kWh</p>
-                        <p class="text-sm">탄소 배출량: ${(building.powerUsage * 0.4541 / 1000).toFixed(2)} tCO₂eq</p>
-                    </div>
-                `);
-                
-                // 툴팁 이벤트
-                marker.on('mouseover', function(e) {
-                    const tooltip = document.getElementById('tooltip');
-                    tooltip.innerHTML = `
-                        <strong>${building.name}</strong><br>
-                        전력 사용량: ${building.powerUsage.toLocaleString()} kWh<br>
-                        탄소 배출량: ${(building.powerUsage * 0.4541 / 1000).toFixed(2)} tCO₂eq
-                    `;
-                    tooltip.style.left = `${e.originalEvent.pageX + 10}px`;
-                    tooltip.style.top = `${e.originalEvent.pageY + 10}px`;
-                    tooltip.style.display = 'block';
-                });
-                
-                marker.on('mouseout', function() {
-                    document.getElementById('tooltip').style.display = 'none';
-                });
-                
-                marker.on('mousemove', function(e) {
-                    const tooltip = document.getElementById('tooltip');
-                    tooltip.style.left = `${e.originalEvent.pageX + 10}px`;
-                    tooltip.style.top = `${e.originalEvent.pageY + 10}px`;
-                });
-                
-                currentMarkers.push(marker);
+            // 최대/최소 사용량 찾기
+            let maxUsage = 0;
+            let minUsage = Infinity;
+            Object.keys(buildingCoordinates).forEach(buildingName => {
+                const powerUsage = monthData[buildingName];
+                if (powerUsage && powerUsage > 0) {
+                    if (powerUsage > maxUsage) maxUsage = powerUsage;
+                    if (powerUsage < minUsage) minUsage = powerUsage;
+                }
+            });
+
+            console.log(`Power usage range: ${minUsage.toLocaleString()} - ${maxUsage.toLocaleString()} kWh`);
+
+            // 건물별 마커 생성
+            Object.keys(buildingCoordinates).forEach(buildingName => {
+                const powerUsage = monthData[buildingName];
+                if (powerUsage && powerUsage > 0) {
+                    const coords = buildingCoordinates[buildingName];
+                    const carbonEmission = powerUsage * (monthData['\t배출계수'] || 0.4541);
+                    const color = getColor(powerUsage, maxUsage);
+                    const size = getMarkerSize(powerUsage, maxUsage, minUsage);
+                    
+                    // 원형 마커 생성
+                    const marker = L.circleMarker(coords, {
+                        radius: size,
+                        fillColor: color,
+                        color: '#ffffff',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    }).addTo(map);
+                    
+                    // 팝업 추가
+                    const displayName = buildingName.replace(/\t/g, '').trim();
+                    marker.bindPopup(`
+                        <div class="p-3">
+                            <h3 class="font-bold text-lg mb-2">${displayName}</h3>
+                            <div class="space-y-1">
+                                <p class="text-sm"><span class="font-medium">전력 사용량:</span> ${powerUsage.toLocaleString()} kWh</p>
+                                <p class="text-sm"><span class="font-medium">탄소 배출량:</span> ${carbonEmission.toFixed(2)} tCO₂eq</p>
+                                <p class="text-xs text-gray-500">전체 대비: ${((powerUsage/maxUsage)*100).toFixed(1)}%</p>
+                            </div>
+                        </div>
+                    `);
+                    
+                    // 툴팁 이벤트 (더 상세한 정보)
+                    marker.on('mouseover', function(e) {
+                        const tooltip = document.getElementById('tooltip');
+                        const percentage = ((powerUsage/maxUsage)*100).toFixed(1);
+                        tooltip.innerHTML = `
+                            <div class="font-semibold">${displayName}</div>
+                            <div class="mt-1 space-y-1 text-sm">
+                                <div>전력: ${powerUsage.toLocaleString()} kWh</div>
+                                <div>탄소: ${carbonEmission.toFixed(2)} tCO₂eq</div>
+                                <div class="text-xs text-gray-600">상위 ${percentage}%</div>
+                            </div>
+                        `;
+                        tooltip.style.left = `${e.originalEvent.pageX + 10}px`;
+                        tooltip.style.top = `${e.originalEvent.pageY + 10}px`;
+                        tooltip.style.display = 'block';
+                    });
+                    
+                    marker.on('mouseout', function() {
+                        document.getElementById('tooltip').style.display = 'none';
+                    });
+                    
+                    marker.on('mousemove', function(e) {
+                        const tooltip = document.getElementById('tooltip');
+                        tooltip.style.left = `${e.originalEvent.pageX + 10}px`;
+                        tooltip.style.top = `${e.originalEvent.pageY + 10}px`;
+                    });
+                    
+                    currentMarkers.push(marker);
+                }
+            });
+
+            // 마커 개수 로그
+            console.log(`Created ${currentMarkers.length} markers for month ${monthIndex + 1}`);
+        }
+
+        // 차트 초기화
+        function initCharts() {
+            // 주별 탄소 배출량 차트 (고정 데이터)
+            const weeklyCtx = document.getElementById('weeklyEmissions').getContext('2d');
+            weeklyChart = new Chart(weeklyCtx, {
+                type: 'line',
+                data: {
+                    labels: ['5월 1주', '5월 2주', '5월 3주', '5월 4주', '6월 1주', '6월 2주', '6월 3주', '6월 4주'],
+                    datasets: [{
+                        label: '탄소 배출량 (tCO₂eq)',
+                        data: [320, 380, 450, 420, 360, 480, 380, 420],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'tCO₂eq'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            // 월별 탄소 배출량 차트
+            const monthlyCtx = document.getElementById('monthlyEmissions').getContext('2d');
+            monthlyChart = new Chart(monthlyCtx, {
+                type: 'line',
+                data: {
+                    labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
+                    datasets: [{
+                        label: '탄소 배출량 (tCO₂eq)',
+                        data: [],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'tCO₂eq'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
             });
         }
 
-        // 주별 탄소 배출량 차트
-        const weeklyCtx = document.getElementById('weeklyEmissions').getContext('2d');
-        const weeklyChart = new Chart(weeklyCtx, {
-            type: 'line',
-            data: {
-                labels: ['5월 1주', '5월 2주', '5월 3주', '5월 4주', '6월 1주', '6월 2주', '6월 3주', '6월 4주'],
-                datasets: [{
-                    label: '탄소 배출량 (tCO₂eq)',
-                    data: [320, 380, 450, 420, 360, 480, 380, 420],
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'tCO₂eq'
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                }
-            }
-        });
+        // 데이터 로드 함수
+        async function loadElectricData() {
+            try {
+                document.getElementById('loading').style.display = 'flex';
+                document.getElementById('errorMessage').style.display = 'none';
 
-        // 월별 탄소 배출량 차트
-        const monthlyCtx = document.getElementById('monthlyEmissions').getContext('2d');
-        const monthlyChart = new Chart(monthlyCtx, {
-            type: 'line',
-            data: {
-                labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
-                datasets: [{
-                    label: '탄소 배출량 (tCO₂eq)',
-                    data: monthlyEmissions,
-                    borderColor: '#10b981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'tCO₂eq'
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    }
+                const response = await fetch('/api/emissions/electric/detailed');
+                if (!response.ok) {
+                    throw new Error('전력 데이터를 불러오는 중 오류가 발생했습니다.');
                 }
+
+                const data = await response.json();
+                electricData = data;
+                
+                console.log('Electric data loaded:', data.length, 'months');
+
+                updateCharts(data);
+                updateSummary(data);
+                updateBuildingMarkers(currentMonth);
+
+            } catch (error) {
+                console.error('Error loading electric data:', error);
+                document.getElementById('errorText').textContent = error.message;
+                document.getElementById('errorMessage').style.display = 'block';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
             }
-        });
+        }
+
+        // 차트 업데이트
+        function updateCharts(data) {
+            if (data.length === 0) return;
+
+            // 월별 탄소 배출량 업데이트
+            const monthlyEmissions = data.map(item => item['탄소배출량'] || 0);
+            monthlyChart.data.datasets[0].data = monthlyEmissions;
+            monthlyChart.update();
+        }
+
+        // 요약 정보 업데이트
+        function updateSummary(data) {
+            if (data.length === 0) return;
+
+            // 연간 전력 사용량 계산
+            const annualPowerUsage = data.reduce((sum, item) => sum + (item['총 사용 전력량'] || 0), 0);
+            document.getElementById('annualPowerUsage').textContent = `${Math.round(annualPowerUsage).toLocaleString()} kWh`;
+
+            // 연간 탄소 배출량 계산
+            const annualCarbonEmission = data.reduce((sum, item) => sum + (item['탄소배출량'] || 0), 0);
+            document.getElementById('annualCarbonEmission').textContent = `${Math.round(annualCarbonEmission).toLocaleString()} tCO₂eq`;
+
+            // 최대 전력 사용 건물 찾기
+            let maxBuilding = '';
+            let maxUsage = 0;
+            
+            data.forEach(monthData => {
+                Object.keys(buildingCoordinates).forEach(buildingName => {
+                    const usage = monthData[buildingName] || 0;
+                    if (usage > maxUsage) {
+                        maxUsage = usage;
+                        maxBuilding = buildingName.replace(/\t/g, '').trim();
+                    }
+                });
+            });
+            
+            document.getElementById('maxPowerBuilding').textContent = maxBuilding || '-';
+        }
 
         // 월 선택 이벤트 처리
         document.getElementById('monthSelector').addEventListener('change', function(e) {
             currentMonth = parseInt(e.target.value);
             updateBuildingMarkers(currentMonth);
-            document.getElementById('selectedMonthDisplay').textContent = `${currentMonth}월`;
         });
+
+        // 새로고침 버튼 이벤트
+        document.getElementById('refreshBtn').addEventListener('click', loadElectricData);
 
         // 초기 로드
         document.addEventListener('DOMContentLoaded', () => {
-            updateBuildingMarkers(currentMonth);
+            initCharts();
+            loadElectricData();
         });
     </script>
 </body>
