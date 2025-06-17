@@ -203,14 +203,16 @@
             </div>
         </div>
 
-        <!-- 주별/월별 차트 행 -->
+        <!-- 월별 차트 행 -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- 월별 전력 사용량 차트 (막대그래프로 변경) -->
             <div class="card">
-                <h3 class="text-lg font-semibold mb-4">주별 탄소 배출량 (tCO₂eq)</h3>
+                <h3 class="text-lg font-semibold mb-4">월별 전력 사용량 (kWh)</h3>
                 <div class="h-64">
-                    <canvas id="weeklyEmissions"></canvas>
+                    <canvas id="monthlyPowerUsage"></canvas>
                 </div>
             </div>
+            <!-- 월별 탄소 배출량 차트 (라인차트 유지) -->
             <div class="card">
                 <h3 class="text-lg font-semibold mb-4">월별 탄소 배출량 (tCO₂eq)</h3>
                 <div class="h-64">
@@ -353,7 +355,7 @@
         let currentMonth = 0;
         let currentMarkers = [];
         let electricData = [];
-        let weeklyChart, monthlyChart;
+        let monthlyPowerUsageChart, monthlyChart;
 
         // 전력 사용량에 따른 색상 계산 함수
         function getColor(powerUsage, maxUsage) {
@@ -485,19 +487,20 @@
 
         // 차트 초기화
         function initCharts() {
-            // 주별 탄소 배출량 차트 (고정 데이터)
-            const weeklyCtx = document.getElementById('weeklyEmissions').getContext('2d');
-            weeklyChart = new Chart(weeklyCtx, {
-                type: 'line',
+            // 월별 전력 사용량 차트 (막대그래프로 변경)
+            const powerUsageCtx = document.getElementById('monthlyPowerUsage').getContext('2d');
+            monthlyPowerUsageChart = new Chart(powerUsageCtx, {
+                type: 'bar', // line에서 bar로 변경
                 data: {
-                    labels: ['5월 1주', '5월 2주', '5월 3주', '5월 4주', '6월 1주', '6월 2주', '6월 3주', '6월 4주'],
+                    labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
                     datasets: [{
-                        label: '탄소 배출량 (tCO₂eq)',
-                        data: [320, 380, 450, 420, 360, 480, 380, 420],
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        tension: 0.4,
-                        fill: true
+                        label: '전력 사용량 (kWh)',
+                        data: [],
+                        backgroundColor: 'rgba(245, 158, 11, 0.8)', // 노란색/주황색 계열
+                        borderColor: '#f59e0b',
+                        borderWidth: 2,
+                        borderRadius: 4, // 막대 모서리 둥글게
+                        borderSkipped: false,
                     }]
                 },
                 options: {
@@ -508,19 +511,53 @@
                             beginAtZero: true,
                             title: {
                                 display: true,
-                                text: 'tCO₂eq'
+                                text: 'kWh'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString();
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)',
+                                borderDash: [2, 2]
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
                             }
                         }
                     },
                     plugins: {
                         legend: {
                             display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleFont: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            padding: 12,
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw.toLocaleString()} kWh`;
+                                }
+                            }
                         }
+                    },
+                    // 막대그래프 hover 효과
+                    onHover: (event, elements) => {
+                        event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
                     }
                 }
             });
 
-            // 월별 탄소 배출량 차트
+            // 월별 탄소 배출량 차트 (라인차트 유지)
             const monthlyCtx = document.getElementById('monthlyEmissions').getContext('2d');
             monthlyChart = new Chart(monthlyCtx, {
                 type: 'line',
@@ -532,7 +569,12 @@
                         borderColor: '#10b981',
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
                         tension: 0.4,
-                        fill: true
+                        fill: true,
+                        pointBackgroundColor: '#10b981',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
                     }]
                 },
                 options: {
@@ -544,12 +586,32 @@
                             title: {
                                 display: true,
                                 text: 'tCO₂eq'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)',
+                                borderDash: [2, 2]
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
                             }
                         }
                     },
                     plugins: {
                         legend: {
                             display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleFont: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            padding: 12
                         }
                     }
                 }
@@ -588,6 +650,11 @@
         // 차트 업데이트
         function updateCharts(data) {
             if (data.length === 0) return;
+
+            // 월별 전력 사용량 업데이트
+            const monthlyPowerUsage = data.map(item => item['총 사용 전력량'] || 0);
+            monthlyPowerUsageChart.data.datasets[0].data = monthlyPowerUsage;
+            monthlyPowerUsageChart.update();
 
             // 월별 탄소 배출량 업데이트
             const monthlyEmissions = data.map(item => item['탄소배출량'] || 0);

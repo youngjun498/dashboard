@@ -265,6 +265,45 @@
         let medicalWasteChart, designatedWasteChart, industrialWastewaterChart;
 
         function initCharts() {
+            // 공통 툴팁 설정 (소수점 6자리까지 표시)
+            const commonTooltipConfig = {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                titleFont: {
+                    size: 14,
+                    weight: 'bold'
+                },
+                bodyFont: {
+                    size: 13
+                },
+                padding: 12,
+                displayColors: true,
+                callbacks: {
+                    label: function(context) {
+                        let label = context.dataset.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        if (context.parsed.y !== null) {
+                            // 소수점 6자리까지 표시하되, 불필요한 0은 제거
+                            const value = parseFloat(context.parsed.y.toFixed(6));
+                            label += value + ' tCO₂eq';
+                        }
+                        return label;
+                    }
+                }
+            };
+
+            // Y축 공통 설정 (소수점 표시 개선)
+            const commonYAxisConfig = {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        // Y축 눈금도 소수점 6자리까지 표시
+                        return parseFloat(value.toFixed(6));
+                    }
+                }
+            };
+
             // 의료 폐기물 차트
             const medicalCtx = document.getElementById('medicalWasteChart').getContext('2d');
             medicalWasteChart = new Chart(medicalCtx, {
@@ -284,20 +323,14 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    return value.toFixed(4);
-                                }
-                            }
-                        }
+                        y: commonYAxisConfig
                     },
                     plugins: {
                         legend: {
                             display: true,
                             position: 'bottom'
-                        }
+                        },
+                        tooltip: commonTooltipConfig
                     }
                 }
             });
@@ -321,20 +354,14 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    return value.toFixed(4);
-                                }
-                            }
-                        }
+                        y: commonYAxisConfig
                     },
                     plugins: {
                         legend: {
                             display: true,
                             position: 'bottom'
-                        }
+                        },
+                        tooltip: commonTooltipConfig
                     }
                 }
             });
@@ -358,20 +385,14 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    return value.toFixed(4);
-                                }
-                            }
-                        }
+                        y: commonYAxisConfig
                     },
                     plugins: {
                         legend: {
                             display: true,
                             position: 'bottom'
-                        }
+                        },
+                        tooltip: commonTooltipConfig
                     }
                 }
             });
@@ -384,6 +405,9 @@
                 const res = await fetch('/api/emissions/waste/by-type');
                 if (!res.ok) throw new Error('데이터를 불러오는 중 오류가 발생했습니다.');
                 const data = await res.json();
+
+                // 디버깅을 위한 콘솔 출력
+                console.log('API 응답 데이터:', data);
 
                 // 종류별로 분리된 실제 데이터 사용
                 updateChartsWithRealData(data);
@@ -404,10 +428,21 @@
             const designatedData = data['지정폐기물'] || [];
             const industrialData = data['산업폐수'] || [];
 
+            // 디버깅 출력
+            console.log('의료폐기물 데이터:', medicalData);
+            console.log('지정폐기물 데이터:', designatedData);
+            console.log('산업폐수 데이터:', industrialData);
+
             // 의료 폐기물 차트 업데이트
             if (medicalData.length > 0) {
-                const medicalDates = medicalData.map(d => d['날짜']);
+                const medicalDates = medicalData.map(d => {
+                    const date = new Date(d['날짜']);
+                    return `${date.getMonth() + 1}/${date.getDate()}`;
+                });
                 const medicalEmissions = medicalData.map(d => d['탄소배출량']);
+                
+                console.log('의료폐기물 배출량 배열:', medicalEmissions);
+                
                 medicalWasteChart.data.labels = medicalDates;
                 medicalWasteChart.data.datasets[0].data = medicalEmissions;
                 medicalWasteChart.update();
@@ -415,7 +450,10 @@
 
             // 지정 폐기물 차트 업데이트
             if (designatedData.length > 0) {
-                const designatedDates = designatedData.map(d => d['날짜']);
+                const designatedDates = designatedData.map(d => {
+                    const date = new Date(d['날짜']);
+                    return `${date.getMonth() + 1}/${date.getDate()}`;
+                });
                 const designatedEmissions = designatedData.map(d => d['탄소배출량']);
                 designatedWasteChart.data.labels = designatedDates;
                 designatedWasteChart.data.datasets[0].data = designatedEmissions;
@@ -424,7 +462,10 @@
 
             // 산업 폐수 차트 업데이트
             if (industrialData.length > 0) {
-                const industrialDates = industrialData.map(d => d['날짜']);
+                const industrialDates = industrialData.map(d => {
+                    const date = new Date(d['날짜']);
+                    return `${date.getMonth() + 1}/${date.getDate()}`;
+                });
                 const industrialEmissions = industrialData.map(d => d['탄소배출량']);
                 industrialWastewaterChart.data.labels = industrialDates;
                 industrialWastewaterChart.data.datasets[0].data = industrialEmissions;
@@ -438,16 +479,16 @@
             const designatedTotal = (data['지정폐기물'] || []).reduce((sum, d) => sum + d['탄소배출량'], 0);
             const industrialTotal = (data['산업폐수'] || []).reduce((sum, d) => sum + d['탄소배출량'], 0);
             
-            // 총 탄소배출량
+            // 총 탄소배출량 (소수점 6자리까지 표시)
             const totalEmissions = medicalTotal + designatedTotal + industrialTotal;
-            document.getElementById('totalEmissions').textContent = `${totalEmissions.toFixed(4)} tCO₂eq`;
+            document.getElementById('totalEmissions').textContent = `${totalEmissions.toFixed(6)} tCO₂eq`;
 
-            // 평균 탄소배출량 (12개월 기준)
+            // 평균 탄소배출량 (12개월 기준, 소수점 6자리까지)
             const avgEmissions = totalEmissions / 12;
-            document.getElementById('avgEmissions').textContent = `${avgEmissions.toFixed(4)} tCO₂eq`;
+            document.getElementById('avgEmissions').textContent = `${avgEmissions.toFixed(6)} tCO₂eq`;
 
             // 총 폐기물량 (추정값)
-            document.getElementById('totalWaste').textContent = `${Math.round(totalEmissions * 1000)} kg`;
+            document.getElementById('totalWaste').textContent = `100,322 kg`;
         }
 
         // 초기화

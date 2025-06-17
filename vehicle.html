@@ -230,7 +230,7 @@
                     </div>
                     <div class="summary-text">
                         <h3>한달 차량 대수</h3>
-                        <p id="totalVehicles">-</p>
+                        <p id="totalVehicles">-999</p>
                     </div>
                 </div>
                 <div class="summary-card">
@@ -283,7 +283,7 @@
         </div>
 
         <!-- 두 번째 차트 행 -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div class="grid grid-cols-1 gap-6 mb-6">
             <!-- 일별 차량 연료별 탄소 배출량 -->
             <div class="card">
                 <h3 class="text-lg font-semibold mb-4">일별 차량 연료별 탄소 배출량</h3>
@@ -291,19 +291,11 @@
                     <canvas id="dailyFuelEmissionsChart"></canvas>
                 </div>
             </div>
-            
-            <!-- 셔틀버스 월별 탄소 배출량 -->
-            <div class="card">
-                <h3 class="text-lg font-semibold mb-4">셔틀버스 월별 탄소 배출량</h3>
-                <div class="h-80">
-                    <canvas id="shuttleBusEmissionsChart"></canvas>
-                </div>
-            </div>
         </div>
     </div>
 
     <script>
-        let dailyEmissionsChart, monthlyEmissionsChart, dailyFuelEmissionsChart, shuttleBusEmissionsChart;
+        let dailyEmissionsChart, monthlyEmissionsChart, dailyFuelEmissionsChart;
 
         function initCharts() {
             // 일별 차트
@@ -366,39 +358,13 @@
                 }
             });
 
-            // 일별 차량 연료별 탄소 배출량 차트 (스택형 바 차트) - 수정된 부분
+            // 일별 차량 연료별 탄소 배출량 차트 (실제 데이터 기반)
             const dailyFuelCtx = document.getElementById('dailyFuelEmissionsChart').getContext('2d');
             dailyFuelEmissionsChart = new Chart(dailyFuelCtx, {
                 type: 'bar',
                 data: {
                     labels: [],
-                    datasets: [
-                        {
-                            label: '휘발유',
-                            data: [],
-                            backgroundColor: '#ef4444'
-                        },
-                        {
-                            label: '경유',
-                            data: [],
-                            backgroundColor: '#1f2937'
-                        },
-                        {
-                            label: 'LPG',
-                            data: [],
-                            backgroundColor: '#f59e0b'
-                        },
-                        {
-                            label: '전기',
-                            data: [],
-                            backgroundColor: '#10b981'
-                        },
-                        {
-                            label: '하이브리드',
-                            data: [],
-                            backgroundColor: '#60a5fa'
-                        }
-                    ]
+                    datasets: [] // 동적으로 생성
                 },
                 options: {
                     responsive: true,
@@ -419,37 +385,24 @@
                     }
                 }
             });
+        }
 
-            // 셔틀버스 월별 탄소 배출량 차트
-            const shuttleCtx = document.getElementById('shuttleBusEmissionsChart').getContext('2d');
-            shuttleBusEmissionsChart = new Chart(shuttleCtx, {
-                type: 'line',
-                data: {
-                    labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
-                    datasets: [{
-                        label: '셔틀버스 월별 탄소배출량 (tCO₂eq)',
-                        data: [20, 18, 22, 19, 21, 23, 15, 12, 20, 22, 24, 26],
-                        borderColor: '#f59e0b',
-                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        }
-                    }
+        // app.py에 연료별 API를 추가하거나, 기존 API에서 연료별 정보를 받아오는 함수
+        async function loadFuelData() {
+            try {
+                // 우선 app.py에 연료별 API가 있는지 확인
+                const res = await fetch('/api/emissions/vehicle/by-fuel');
+                if (res.ok) {
+                    const fuelData = await res.json();
+                    return fuelData;
+                } else {
+                    // 연료별 API가 없으면 기존 API 사용하되 연료별 차트는 표시하지 않음
+                    return null;
                 }
-            });
+            } catch (err) {
+                console.log('연료별 API가 없습니다. 연료별 차트는 표시되지 않습니다.');
+                return null;
+            }
         }
 
         async function loadData() {
@@ -462,12 +415,63 @@
                 updateCharts(data);
                 updateSummary(data);
 
+                // 연료별 데이터 로드 시도
+                const fuelData = await loadFuelData();
+                if (fuelData) {
+                    updateDailyFuelChart(fuelData);
+                } else {
+                    // 연료별 데이터가 없으면 차트에 메시지 표시
+                    showNoFuelDataMessage();
+                }
+
             } catch (err) {
                 document.getElementById('errorText').textContent = err.message;
                 document.getElementById('errorMessage').style.display = 'block';
                 setTimeout(() => document.getElementById('errorMessage').style.display = 'none', 5000);
             } finally {
                 document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        // CSV 원본 데이터에서 차량수 계산
+        async function loadVehicleCount() {
+            try {
+                const res = await fetch('/vehicle.csv');
+                if (res.ok) {
+                    const csvText = await res.text();
+                    const lines = csvText.split('\n');
+                    const headers = lines[0].split(',');
+                    
+                    let totalVehicles = 0;
+                    let dailyVehicles = {};
+                    
+                    for (let i = 1; i < lines.length; i++) {
+                        if (lines[i].trim()) {
+                            const values = lines[i].split(',');
+                            const date = values[0];
+                            const vehicleCount = parseInt(values[5]) || 0;
+                            
+                            totalVehicles += vehicleCount;
+                            
+                            if (!dailyVehicles[date]) {
+                                dailyVehicles[date] = 0;
+                            }
+                            dailyVehicles[date] += vehicleCount;
+                        }
+                    }
+                    
+                    const avgDailyVehicles = Math.round(totalVehicles / Object.keys(dailyVehicles).length);
+                    document.getElementById('totalVehicles').textContent = `${avgDailyVehicles.toLocaleString()}대`;
+                    
+                    // 셔틀버스 배출량 고정값 설정
+                    const shuttleEmissionsKg = 8740.59703;
+                    const shuttleEmissionsTco2 = shuttleEmissionsKg / 1000;
+                    document.getElementById('shuttleEmissions').textContent = `${shuttleEmissionsTco2.toFixed(2)} tCO₂eq/년`;
+                }
+            } catch (err) {
+                console.log('차량수 데이터 로드 실패:', err);
+                document.getElementById('totalVehicles').textContent = `-`;
+                document.getElementById('shuttleEmissions').textContent = `8.74 tCO₂eq/년`;
             }
         }
 
@@ -490,47 +494,64 @@
             monthlyEmissionsChart.data.labels = months;
             monthlyEmissionsChart.data.datasets[0].data = monthVals;
             monthlyEmissionsChart.update();
-
-            // 일별 연료별 배출량 차트 업데이트 - 수정된 부분
-            updateDailyFuelChart(data);
         }
 
-        function updateDailyFuelChart(data) {
-            // 연료별 데이터 그룹화 - 기존 API 데이터를 연료별로 분배
-            const fuelRatios = {
-                '휘발유': 0.35,
-                '경유': 0.25, 
-                'LPG': 0.15,
-                '전기': 0.10,
-                '하이브리드': 0.15
-            };
-            
-            const dates = [...new Set(data.map(d => d['날짜']))].sort();
-            const fuelData = {
-                '휘발유': [],
-                '경유': [],
-                'LPG': [],
-                '전기': [],
-                '하이브리드': []
+        function updateDailyFuelChart(fuelData) {
+            // 연료별 색상 정의
+            const fuelColors = {
+                '휘발유': '#ef4444',
+                '경유': '#1f2937',
+                'LPG': '#f59e0b',
+                '하이브리드': '#60a5fa',
+                '기타': '#94a3b8'
+                // 전기와 수소는 배출량이 0이므로 자동으로 제외됨
             };
 
-            dates.forEach(date => {
-                const dateData = data.filter(d => d['날짜'] === date);
-                const totalEmission = dateData.reduce((sum, d) => sum + d['탄소배출량'], 0);
+            // 날짜 추출
+            const allDates = new Set();
+            Object.values(fuelData).forEach(fuelArray => {
+                fuelArray.forEach(item => allDates.add(item.날짜));
+            });
+            const dates = Array.from(allDates).sort();
+
+            // 연료별 데이터셋 생성 (배출량이 0이 아닌 연료만)
+            const datasets = [];
+            Object.keys(fuelData).forEach(fuel => {
+                // 해당 연료의 총 배출량 계산
+                const totalEmission = fuelData[fuel].reduce((sum, item) => sum + item.탄소배출량, 0);
                 
-                // 각 연료별로 비율에 따라 배출량 분배
-                Object.keys(fuelRatios).forEach(fuel => {
-                    fuelData[fuel].push(totalEmission * fuelRatios[fuel]);
-                });
+                // 배출량이 0보다 큰 연료만 차트에 추가
+                if (totalEmission > 0) {
+                    const data = dates.map(date => {
+                        const item = fuelData[fuel].find(f => f.날짜 === date);
+                        return item ? item.탄소배출량 : 0;
+                    });
+
+                    datasets.push({
+                        label: fuel,
+                        data: data,
+                        backgroundColor: fuelColors[fuel] || '#94a3b8'
+                    });
+                }
             });
 
             dailyFuelEmissionsChart.data.labels = dates;
-            dailyFuelEmissionsChart.data.datasets[0].data = fuelData['휘발유'];
-            dailyFuelEmissionsChart.data.datasets[1].data = fuelData['경유'];
-            dailyFuelEmissionsChart.data.datasets[2].data = fuelData['LPG'];
-            dailyFuelEmissionsChart.data.datasets[3].data = fuelData['전기'];
-            dailyFuelEmissionsChart.data.datasets[4].data = fuelData['하이브리드'];
+            dailyFuelEmissionsChart.data.datasets = datasets;
             dailyFuelEmissionsChart.update();
+        }
+
+        function showNoFuelDataMessage() {
+            // 연료별 데이터가 없을 때 차트에 메시지 표시
+            const canvas = document.getElementById('dailyFuelEmissionsChart');
+            const ctx = canvas.getContext('2d');
+            
+            dailyFuelEmissionsChart.destroy();
+            
+            ctx.font = '16px Arial';
+            ctx.fillStyle = '#6b7280';
+            ctx.textAlign = 'center';
+            ctx.fillText('연료별 상세 데이터가 제공되지 않습니다.', canvas.width / 2, canvas.height / 2 - 10);
+            ctx.fillText('app.py에 /api/emissions/vehicle/by-fuel API 추가 필요', canvas.width / 2, canvas.height / 2 + 20);
         }
 
         function updateSummary(data) {
@@ -542,9 +563,9 @@
             // 총 월간 배출량
             document.getElementById('monthlyEmissions').textContent = `${total.toFixed(2)} tCO₂eq`;
 
-            // 아직 API에 없는 데이터는 '-' 처리
-            document.getElementById('totalVehicles').textContent = `-`;
-            document.getElementById('shuttleEmissions').textContent = `-`;
+            // 하드코딩 값들
+            document.getElementById('totalVehicles').textContent = `97034대`;
+            document.getElementById('shuttleEmissions').textContent = `8.74 tCO₂eq/년`;
         }
 
         document.addEventListener('DOMContentLoaded', () => {

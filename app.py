@@ -42,21 +42,7 @@ def get_image():
     return app.send_static_file('backend/data/image.png')
 
 # API 엔드포인트들
-@app.route('/api/emission/vehicle', methods=['GET'])
-def vehicle_emission_flask():
-    filepath = os.path.join(DATA_DIR, 'vehicle.csv')
-    if not os.path.exists(filepath):
-        return jsonify({"error": "CSV file not found. Please upload vehicle.csv to data/ folder."}), 404
 
-    df = pd.read_csv(filepath)
-    factors = {'gasoline': 2.31, 'diesel': 2.68}
-    df['emission'] = df.apply(
-        lambda row: row['distance_km'] * factors.get(row['fuel_type'], 0),
-        axis=1
-    )
-
-    result = df[['date', 'emission']]
-    return jsonify(result.to_dict(orient='records'))
 
 @app.route("/api/emissions/vehicle", methods=['GET'])
 def vehicle_emissions_fastapi_converted():
@@ -70,60 +56,31 @@ def vehicle_emissions_fastapi_converted():
     result["탄소배출량"] = result["탄소배출량"].round(2)
     return jsonify(result.to_dict(orient="records"))
 
-@app.route("/api/emissions/waste", methods=["GET"])
-def waste_emissions_updated():
-    filepath = os.path.join(DATA_DIR, "waste.csv")
+@app.route("/api/emissions/vehicle/by-fuel", methods=["GET"])
+def vehicle_emissions_by_fuel():
+    filepath = os.path.join(DATA_DIR, "vehicle.csv")
     if not os.path.exists(filepath):
-        return jsonify({"error": "waste.csv 파일이 없습니다."}), 404
+        return jsonify({"error": "CSV file not found."}), 404
 
     df = pd.read_csv(filepath)
+    df["탄소배출량"] = (df["주행거리"] / df["연비"]) * df["배출계수"] * df["차량수"]
+    
+    # 연료별, 날짜별로 그룹화
+    result = df.groupby(["날짜", "연료 종류"])["탄소배출량"].sum().reset_index()
+    result["탄소배출량"] = result["탄소배출량"].round(2)
+    
+    # 연료별로 분리하여 반환
+    fuel_data = {}
+    for fuel in result["연료 종류"].unique():
+        fuel_records = result[result["연료 종류"] == fuel][["날짜", "탄소배출량"]].to_dict(orient="records")
+        # 배출량이 0보다 큰 경우만 포함
+        if any(record["탄소배출량"] > 0 for record in fuel_records):
+            fuel_data[fuel] = fuel_records
+    
+    return jsonify(fuel_data)
 
-    # 기본값 초기화
-    df["탄소배출량"] = 0.0
+    
 
-    # 의료폐기물 - 매립
-    mask_med_landfill = (df["종류"] == "의료폐기물") & (df["처리방식"] == "매립")
-    df.loc[mask_med_landfill, "탄소배출량"] = (
-        df.loc[mask_med_landfill, "MSW"] *
-        df.loc[mask_med_landfill, "DOC"] *
-        df.loc[mask_med_landfill, "DOCj"] *
-        df.loc[mask_med_landfill, "MCF"] *
-        df.loc[mask_med_landfill, "F"] *
-        (16 / 12) *
-        (1 - df.loc[mask_med_landfill, "R"])
-    )
-
-    # 의료폐기물 - 소각
-    mask_med_inc = (df["종류"] == "의료폐기물") & (df["처리방식"] == "소각")
-    df.loc[mask_med_inc, "탄소배출량"] = (
-        df.loc[mask_med_inc, "MSW"] *
-        df.loc[mask_med_inc, "소각배출계수"]
-    )
-
-    # 지정폐기물 (매립)
-    mask_des = (df["종류"] == "지정폐기물")
-    df.loc[mask_des, "탄소배출량"] = (
-        df.loc[mask_des, "MSW"] *
-        df.loc[mask_des, "DOC"] *
-        df.loc[mask_des, "DOCj"] *
-        df.loc[mask_des, "MCF"] *
-        df.loc[mask_des, "F"] *
-        (16 / 12) *
-        (1 - df.loc[mask_des, "R"])
-    )
-
-    # 산업폐수
-    mask_indus = (df["종류"] == "산업폐수")
-    df.loc[mask_indus, "탄소배출량"] = (
-        df.loc[mask_indus, "TOW"] *
-        df.loc[mask_indus, "EF"] *
-        (1 - df.loc[mask_indus, "R"])
-    )
-
-    # 날짜별 합산
-    result = df.groupby("날짜")["탄소배출량"].sum().reset_index()
-    result["탄소배출량"] = result["탄소배출량"].round(4)
-    return jsonify(result.to_dict(orient="records"))
 
 @app.route("/api/emissions/waste/by-type", methods=["GET"])
 def waste_emissions_by_type():
@@ -191,40 +148,8 @@ def waste_emissions_by_type():
     })
 
 
-@app.route("/api/emissions/greenery", methods=["GET"])
-def greenery_total_emissions():
-    total_absorption = 0.0
 
-    # === 면적 기반 ===
-    area_path = os.path.join(DATA_DIR, "greenery_area.csv")
-    if os.path.exists(area_path):
-        df_area = pd.read_csv(area_path)
 
-        def calc_area(row):
-            if row["구분"] == "Land Area":
-                return row["면적(m²)"] * row["carbon_uptake"] + row["면적(m²)"] * row["carbon_storage"]
-            elif row["구분"] == "Tree Cover":
-                return row["면적(m²)"] * row["carbon_storage"]
-            return 0
-
-        df_area["흡수량"] = df_area.apply(calc_area, axis=1)
-        total_absorption += df_area["흡수량"].sum()
-
-    # === 나무 기반 ===
-    tree_path = os.path.join(DATA_DIR, "greenery_tree.csv")
-    if os.path.exists(tree_path):
-        df_tree = pd.read_csv(tree_path)
-
-        df_tree["단위흡수량"] = (
-            df_tree["ΔV"] * df_tree["D"] * df_tree["BEF"] *
-            (1 + df_tree["R"]) * df_tree["CF"] * (44 / 12)
-        )
-        df_tree["총흡수량"] = df_tree["단위흡수량"] * df_tree["개체수"]
-        total_absorption += df_tree["총흡수량"].sum()
-
-    return jsonify({
-        "총 탄소흡수량(tCO₂)": round(total_absorption, 4)
-    })
 
 @app.route("/api/emissions/greenery/details", methods=["GET"])
 def greenery_details():
@@ -324,18 +249,7 @@ def water_emissions():
     result["탄소배출량"] = result["탄소배출량"].round(2)
     return jsonify(result.to_dict(orient="records"))
 
-@app.route("/api/emissions/electric", methods=["GET"])
-def electric_emissions():
-    filepath = os.path.join(DATA_DIR, "electric.csv")
-    if not os.path.exists(filepath):
-        return jsonify({"error": "electric.csv not found."}), 404
 
-    df = pd.read_csv(filepath)
-
-    df["탄소배출량"] = df["총 사용 전력량"] * df["배출계수"]
-    result = df[["날짜", "탄소배출량"]].copy()
-    result["탄소배출량"] = result["탄소배출량"].round(2)
-    return jsonify(result.to_dict(orient="records"))
 
 @app.route("/api/emissions/electric/detailed", methods=["GET"])
 def electric_emissions_detailed():

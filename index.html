@@ -60,9 +60,51 @@
             align-items: center;
             justify-content: center;
         }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            display: none;
+            background-color: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
+    <!-- 로딩 스피너 -->
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+    </div>
+
     <!-- 사이드바 -->
     <div class="sidebar text-white">
         <div class="px-6 py-4">
@@ -114,7 +156,7 @@
                     </a>
                 </li>
             </ul>
-    </div>
+        </div>
     </div>
 
     <!-- 메인 콘텐츠 -->
@@ -132,8 +174,16 @@
                         <i class="fas fa-chevron-down"></i>
                     </div>
                 </div>
-                
+                <button id="refreshBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    <i class="fas fa-sync-alt mr-2"></i>새로고침
+                </button>
             </div>
+        </div>
+
+        <!-- 에러 메시지 -->
+        <div id="errorMessage" class="error-message">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            <span id="errorText"></span>
         </div>
 
         <!-- Summary 섹션 -->
@@ -144,7 +194,7 @@
                 <div class="summary-card">
                     <div>
                         <p class="text-sm text-gray-500">탄소 총 배출량 (tCO₂eq)</p>
-                        <h3 class="text-2xl font-bold">1,234tCO₂</h3>
+                        <h3 class="text-2xl font-bold" id="totalEmissions">- tCO₂</h3>
                     </div>
                     <div class="summary-icon bg-green-500">
                         <i class="fas fa-leaf text-white text-xl"></i>
@@ -155,7 +205,7 @@
                 <div class="summary-card">
                     <div>
                         <p class="text-sm text-gray-500">탄소 총 저장량 (tCO₂eq)</p>
-                        <h3 class="text-2xl font-bold">1.23 tCO₂eq</h3>
+                        <h3 class="text-2xl font-bold" id="totalStorage">- tCO₂eq</h3>
                     </div>
                     <div class="summary-icon bg-blue-500">
                         <i class="fas fa-database text-white text-xl"></i>
@@ -166,7 +216,7 @@
                 <div class="summary-card">
                     <div>
                         <p class="text-sm text-gray-500">탄소 순 배출량 (tCO₂eq)</p>
-                        <h3 class="text-2xl font-bold">1.2345 tCO₂eq</h3>
+                        <h3 class="text-2xl font-bold" id="netEmissions">- tCO₂eq</h3>
                     </div>
                     <div class="summary-icon bg-red-500">
                         <i class="fas fa-balance-scale text-white text-xl"></i>
@@ -177,7 +227,7 @@
                 <div class="summary-card">
                     <div>
                         <p class="text-sm text-gray-500">일일 탄소 순배출량</p>
-                        <h3 class="text-2xl font-bold">1.2345 tCO₂eq</h3>
+                        <h3 class="text-2xl font-bold" id="dailyEmissions">- tCO₂eq</h3>
                     </div>
                     <div class="summary-icon bg-yellow-500">
                         <i class="fas fa-calendar-day text-white text-xl"></i>
@@ -188,7 +238,7 @@
 
         <!-- 첫 번째 차트 행 -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            <!-- 월별 탄소 배출량 (폐기물) -->
+            <!-- 폐기물 월별 탄소 배출량 -->
             <div class="card">
                 <h3 class="text-lg font-semibold mb-4">월별 탄소 배출량 (tCO₂eq) 폐기물</h3>
                 <div class="h-64">
@@ -196,7 +246,7 @@
                 </div>
             </div>
             
-            <!-- 월별 탄소 배출량 (물) -->
+            <!-- 물 월별 탄소 배출량 -->
             <div class="card">
                 <h3 class="text-lg font-semibold mb-4">월별 탄소 배출량 (tCO₂eq) 물</h3>
                 <div class="h-64">
@@ -204,9 +254,9 @@
                 </div>
             </div>
             
-            <!-- 녹지 흡수량 -->
+            <!-- 녹지 흡수량 및 저장량 -->
             <div class="card">
-                <h3 class="text-lg font-semibold mb-4">녹지 흡수량(tCO₂eq) 녹지</h3>
+                <h3 class="text-lg font-semibold mb-4">연간 녹지 흡수량 및 저장량</h3>
                 <div class="h-64">
                     <canvas id="greeneryAbsorption"></canvas>
                 </div>
@@ -215,7 +265,7 @@
 
         <!-- 두 번째 차트 행 -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <!-- 일별 연료별 탄소 배출량 (차량) - vehicle.csv 데이터 사용 -->
+            <!-- 일별 연료별 탄소 배출량 (차량) -->
             <div class="card">
                 <h3 class="text-lg font-semibold mb-4">일별 연료별 탄소 배출량 (tCO₂eq) 차량</h3>
                 <div class="h-80">
@@ -223,7 +273,7 @@
                 </div>
             </div>
             
-            <!-- 전력 사용량 차트 -->
+            <!-- 전력 월별 탄소 배출량 -->
             <div class="card">
                 <h3 class="text-lg font-semibold mb-4">월별 전력 탄소 배출량 (tCO₂eq)</h3>
                 <div class="h-80">
@@ -234,270 +284,488 @@
     </div>
 
     <script>
-        let vehicleEmissionsByFuelChart;
+        let wasteChart, waterChart, greeneryChart, vehicleChart, powerChart;
 
-        // 차량 데이터 로드 함수 (vehicle.html과 동일한 방식)
+        // 차트 초기화
+        function initCharts() {
+            // 폐기물 월별 탄소 배출량 차트
+            const wasteCtx = document.getElementById('wasteEmissions').getContext('2d');
+            wasteChart = new Chart(wasteCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '폐기물 탄소배출량 (tCO₂eq)',
+                        data: [],
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            // 물 월별 탄소 배출량 차트
+            const waterCtx = document.getElementById('waterEmissions').getContext('2d');
+            waterChart = new Chart(waterCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '물 탄소배출량 (tCO₂eq)',
+                        data: [],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            // 녹지 흡수량 및 저장량 차트
+            const greeneryCtx = document.getElementById('greeneryAbsorption').getContext('2d');
+            greeneryChart = new Chart(greeneryCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: '연간 흡수량 (tCO₂/년)',
+                            data: [],
+                            backgroundColor: '#34d399',
+                            borderColor: '#10b981',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '탄소 저장량 (tCO₂)',
+                            data: [],
+                            backgroundColor: '#fbbf24',
+                            borderColor: '#f59e0b',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // 차량 일별 연료별 탄소 배출량 차트
+            const vehicleCtx = document.getElementById('vehicleEmissionsByFuel').getContext('2d');
+            vehicleChart = new Chart(vehicleCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // 전력 월별 탄소 배출량 차트
+            const powerCtx = document.getElementById('powerEmissions').getContext('2d');
+            powerChart = new Chart(powerCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '전력 탄소배출량 (tCO₂eq)',
+                        data: [],
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // 폐기물 데이터 로드
+        async function loadWasteData() {
+            try {
+                const res = await fetch('/api/emissions/waste/by-type');
+                if (!res.ok) throw new Error('폐기물 데이터 로드 실패');
+                const data = await res.json();
+                
+                // 의료폐기물, 지정폐기물, 산업폐수 데이터를 합쳐서 월별 총합 계산
+                const allData = [];
+                const medicalData = data['의료폐기물'] || [];
+                const designatedData = data['지정폐기물'] || [];
+                const industrialData = data['산업폐수'] || [];
+                
+                // 모든 날짜 추출
+                const allDates = new Set();
+                [...medicalData, ...designatedData, ...industrialData].forEach(item => {
+                    allDates.add(item.날짜);
+                });
+                
+                const dates = Array.from(allDates).sort();
+                
+                // 날짜별 총 배출량 계산
+                const totalEmissionsByDate = dates.map(date => {
+                    const medicalEmission = medicalData.find(d => d.날짜 === date)?.탄소배출량 || 0;
+                    const designatedEmission = designatedData.find(d => d.날짜 === date)?.탄소배출량 || 0;
+                    const industrialEmission = industrialData.find(d => d.날짜 === date)?.탄소배출량 || 0;
+                    
+                    return {
+                        날짜: date,
+                        탄소배출량: medicalEmission + designatedEmission + industrialEmission
+                    };
+                });
+                
+                const chartDates = totalEmissionsByDate.map(d => d.날짜);
+                const emissions = totalEmissionsByDate.map(d => d.탄소배출량);
+                
+                wasteChart.data.labels = chartDates;
+                wasteChart.data.datasets[0].data = emissions;
+                wasteChart.update();
+                
+                return totalEmissionsByDate.reduce((sum, d) => sum + d.탄소배출량, 0);
+            } catch (err) {
+                console.error('폐기물 데이터 로드 오류:', err);
+                return 0;
+            }
+        }
+
+        // 물 데이터 로드
+        async function loadWaterData() {
+            try {
+                const res = await fetch('/api/emissions/water');
+                if (!res.ok) throw new Error('물 데이터 로드 실패');
+                const data = await res.json();
+                
+                const dates = data.map(d => d['날짜']);
+                const emissions = data.map(d => d['탄소배출량']);
+                
+                waterChart.data.labels = dates;
+                waterChart.data.datasets[0].data = emissions;
+                waterChart.update();
+                
+                return data.reduce((sum, d) => sum + d['탄소배출량'], 0);
+            } catch (err) {
+                console.error('물 데이터 로드 오류:', err);
+                return 0;
+            }
+        }
+
+        // 녹지 데이터 로드
+        async function loadGreeneryData() {
+            try {
+                const res = await fetch('/api/emissions/greenery/details');
+                if (!res.ok) throw new Error('녹지 데이터 로드 실패');
+                const data = await res.json();
+                
+                const labels = data.area_data.map(d => d.구분);
+                const absorptions = data.area_data.map(d => d.흡수량);
+                const storages = data.area_data.map(d => d.저장량);
+                
+                greeneryChart.data.labels = labels;
+                greeneryChart.data.datasets[0].data = absorptions;
+                greeneryChart.data.datasets[1].data = storages;
+                greeneryChart.update();
+                
+                return {
+                    absorption: data.summary.연간_탄소_흡수량,
+                    storage: data.summary.연간_탄소_저장량
+                };
+            } catch (err) {
+                console.error('녹지 데이터 로드 오류:', err);
+                return { absorption: 0, storage: 0 };
+            }
+        }
+
+        // 차량 데이터 로드
         async function loadVehicleData() {
             try {
-                const res = await fetch('/api/emissions/vehicle');
-                if (!res.ok) throw new Error('차량 데이터를 불러오는 중 오류가 발생했습니다.');
-                const data = await res.json();
-                updateVehicleChart(data);
+                // 먼저 연료별 API 시도
+                const fuelRes = await fetch('/api/emissions/vehicle/by-fuel');
+                if (fuelRes.ok) {
+                    const fuelData = await fuelRes.json();
+                    
+                    // 연료별 색상 정의
+                    const fuelColors = {
+                        '휘발유': '#ef4444',
+                        '경유': '#1f2937',
+                        'LPG': '#f59e0b',
+                        '하이브리드': '#60a5fa',
+                        '기타': '#94a3b8'
+                    };
+
+                    // 모든 날짜 추출
+                    const allDates = new Set();
+                    Object.values(fuelData).forEach(fuelArray => {
+                        fuelArray.forEach(item => allDates.add(item.날짜));
+                    });
+                    const dates = Array.from(allDates).sort();
+
+                    // 날짜 포맷팅 (YYYY-MM-DD -> MM/DD)
+                    const formattedDates = dates.map(date => {
+                        const d = new Date(date);
+                        return `${d.getMonth() + 1}/${d.getDate()}`;
+                    });
+
+                    // 연료별 데이터셋 생성 (배출량이 0이 아닌 연료만)
+                    const datasets = [];
+                    let totalEmissions = 0;
+                    
+                    Object.keys(fuelData).forEach(fuel => {
+                        // 해당 연료의 총 배출량 계산
+                        const totalEmission = fuelData[fuel].reduce((sum, item) => sum + item.탄소배출량, 0);
+                        
+                        // 배출량이 0보다 큰 연료만 차트에 추가
+                        if (totalEmission > 0) {
+                            const data = dates.map(date => {
+                                const item = fuelData[fuel].find(f => f.날짜 === date);
+                                return item ? item.탄소배출량 : 0;
+                            });
+
+                            datasets.push({
+                                label: fuel,
+                                data: data,
+                                backgroundColor: fuelColors[fuel] || '#94a3b8'
+                            });
+                            
+                            totalEmissions += totalEmission;
+                        }
+                    });
+
+                    vehicleChart.data.labels = formattedDates;
+                    vehicleChart.data.datasets = datasets;
+                    vehicleChart.update();
+                    
+                    return totalEmissions;
+                } else {
+                    // 연료별 API 실패시 기존 API 사용
+                    const res = await fetch('/api/emissions/vehicle');
+                    if (!res.ok) throw new Error('차량 데이터 로드 실패');
+                    const data = await res.json();
+                    
+                    // 기존 방식으로 폴백
+                    const fuelRatios = {
+                        '휘발유': 0.35,
+                        '경유': 0.25, 
+                        'LPG': 0.15,
+                        '전기': 0.10,
+                        '하이브리드': 0.15
+                    };
+                    
+                    const dates = [...new Set(data.map(d => d['날짜']))].sort();
+                    const fuelData = {
+                        '휘발유': [],
+                        '경유': [],
+                        'LPG': [],
+                        '전기': [],
+                        '하이브리드': []
+                    };
+
+                    dates.forEach(date => {
+                        const dateData = data.filter(d => d['날짜'] === date);
+                        const totalEmission = dateData.reduce((sum, d) => sum + d['탄소배출량'], 0);
+                        
+                        Object.keys(fuelRatios).forEach(fuel => {
+                            fuelData[fuel].push(totalEmission * fuelRatios[fuel]);
+                        });
+                    });
+
+                    const formattedDates = dates.map(date => {
+                        const d = new Date(date);
+                        return `${d.getMonth() + 1}/${d.getDate()}`;
+                    });
+
+                    vehicleChart.data.labels = formattedDates;
+                    vehicleChart.data.datasets = [
+                        {
+                            label: '휘발유',
+                            data: fuelData['휘발유'],
+                            backgroundColor: '#ef4444'
+                        },
+                        {
+                            label: '경유',
+                            data: fuelData['경유'],
+                            backgroundColor: '#1f2937'
+                        },
+                        {
+                            label: 'LPG',
+                            data: fuelData['LPG'],
+                            backgroundColor: '#f59e0b'
+                        },
+                        {
+                            label: '전기',
+                            data: fuelData['전기'],
+                            backgroundColor: '#10b981'
+                        },
+                        {
+                            label: '하이브리드',
+                            data: fuelData['하이브리드'],
+                            backgroundColor: '#60a5fa'
+                        }
+                    ];
+                    vehicleChart.update();
+                    
+                    return data.reduce((sum, d) => sum + d['탄소배출량'], 0);
+                }
             } catch (err) {
-                console.error('차량 데이터 로드 실패:', err);
-                // 에러 시 기본 데이터로 차트 표시
-                updateVehicleChartWithDefaultData();
+                console.error('차량 데이터 로드 오류:', err);
+                return 0;
             }
         }
 
-        // 차량 차트 업데이트 (실제 API 데이터 사용)
-        function updateVehicleChart(data) {
-            // vehicle.html과 동일한 로직: 연료별 데이터 그룹화
-            const fuelRatios = {
-                '휘발유': 0.35,
-                '경유': 0.25, 
-                'LPG': 0.15,
-                '전기': 0.10,
-                '하이브리드': 0.15
-            };
-            
-            const dates = [...new Set(data.map(d => d['날짜']))].sort();
-            const fuelData = {
-                '휘발유': [],
-                '경유': [],
-                'LPG': [],
-                '전기': [],
-                '하이브리드': []
-            };
-
-            dates.forEach(date => {
-                const dateData = data.filter(d => d['날짜'] === date);
-                const totalEmission = dateData.reduce((sum, d) => sum + d['탄소배출량'], 0);
+        // 전력 데이터 로드 (power.html과 동일하게 수정)
+        async function loadPowerData() {
+            try {
+                const res = await fetch('/api/emissions/electric/detailed');
+                if (!res.ok) throw new Error('전력 데이터 로드 실패');
+                const data = await res.json();
                 
-                // 각 연료별로 비율에 따라 배출량 분배
-                Object.keys(fuelRatios).forEach(fuel => {
-                    fuelData[fuel].push(totalEmission * fuelRatios[fuel]);
-                });
-            });
-
-            // 날짜 포맷팅 (YYYY-MM-DD -> MM/DD)
-            const formattedDates = dates.map(date => {
-                const d = new Date(date);
-                return `${d.getMonth() + 1}/${d.getDate()}`;
-            });
-
-            vehicleEmissionsByFuelChart.data.labels = formattedDates;
-            vehicleEmissionsByFuelChart.data.datasets[0].data = fuelData['휘발유'];
-            vehicleEmissionsByFuelChart.data.datasets[1].data = fuelData['경유'];
-            vehicleEmissionsByFuelChart.data.datasets[2].data = fuelData['LPG'];
-            vehicleEmissionsByFuelChart.data.datasets[3].data = fuelData['전기'];
-            vehicleEmissionsByFuelChart.data.datasets[4].data = fuelData['하이브리드'];
-            vehicleEmissionsByFuelChart.update();
+                console.log('전력 데이터:', data); // 디버깅용
+                
+                if (!data || data.length === 0) {
+                    console.error('전력 데이터가 비어있습니다');
+                    return 0;
+                }
+                
+                // 월별 데이터 변환 (1월, 2월, ... 형식으로)
+                const months = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+                const emissions = data.map(d => d['탄소배출량'] || 0);
+                
+                // 데이터 길이를 12개월로 맞추기
+                const monthlyEmissions = emissions.slice(0, 12);
+                const displayMonths = months.slice(0, monthlyEmissions.length);
+                
+                powerChart.data.labels = displayMonths;
+                powerChart.data.datasets[0].data = monthlyEmissions;
+                powerChart.update();
+                
+                console.log('전력 차트 업데이트 완료:', displayMonths, monthlyEmissions);
+                
+                return monthlyEmissions.reduce((sum, emission) => sum + emission, 0);
+            } catch (err) {
+                console.error('전력 데이터 로드 오류:', err);
+                return 0;
+            }
         }
 
-        // 차량 차트 업데이트 (기본 데이터 - API 실패시)
-        function updateVehicleChartWithDefaultData() {
-            const defaultLabels = ['2/1', '2/2', '2/3', '2/4', '2/5', '2/6', '2/7', '2/8', '2/9', '2/10', '2/11', '2/12'];
-            const defaultData = [
-                [120, 115, 130, 125, 135, 140, 130, 125, 135, 145, 140, 150], // 휘발유
-                [80, 75, 85, 80, 90, 95, 85, 80, 90, 100, 95, 105],           // 경유
-                [30, 28, 32, 30, 35, 37, 32, 30, 35, 38, 36, 40],             // LPG
-                [5, 5, 6, 6, 7, 8, 7, 6, 7, 8, 8, 9],                        // 전기
-                [8, 8, 9, 9, 10, 11, 10, 9, 10, 11, 11, 12]                  // 하이브리드
-            ];
-
-            vehicleEmissionsByFuelChart.data.labels = defaultLabels;
-            vehicleEmissionsByFuelChart.data.datasets[0].data = defaultData[0];
-            vehicleEmissionsByFuelChart.data.datasets[1].data = defaultData[1];
-            vehicleEmissionsByFuelChart.data.datasets[2].data = defaultData[2];
-            vehicleEmissionsByFuelChart.data.datasets[3].data = defaultData[3];
-            vehicleEmissionsByFuelChart.data.datasets[4].data = defaultData[4];
-            vehicleEmissionsByFuelChart.update();
+        // 요약 정보 업데이트
+        function updateSummary(totals, greeneryData) {
+            const totalEmissions = totals.waste + totals.water + totals.vehicle + totals.power;
+            const totalStorage = greeneryData.storage;
+            const netEmissions = totalEmissions - greeneryData.absorption;
+            const dailyEmissions = netEmissions / 365;
+            
+            document.getElementById('totalEmissions').textContent = `${Math.round(totalEmissions).toLocaleString()} tCO₂`;
+            document.getElementById('totalStorage').textContent = `${Math.round(totalStorage).toLocaleString()} tCO₂eq`;
+            document.getElementById('netEmissions').textContent = `${Math.round(netEmissions).toLocaleString()} tCO₂eq`;
+            document.getElementById('dailyEmissions').textContent = `${dailyEmissions.toFixed(2)} tCO₂eq`;
         }
 
-        // 폐기물 월별 탄소 배출량 차트
-        const wasteCtx = document.getElementById('wasteEmissions').getContext('2d');
-        const wasteChart = new Chart(wasteCtx, {
-            type: 'line',
-            data: {
-                labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
-                datasets: [{
-                    label: '월별 탄소배출량 (tCO₂eq)',
-                    data: [180, 170, 190, 185, 175, 180, 160, 165, 185, 195, 200, 210],
-                    borderColor: '#ef4444',
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                    fill: true,
-                    tension: 0.3
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        min: 150
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                }
-            }
-        });
+        // 전체 데이터 로드
+        async function loadAllData() {
+            try {
+                document.getElementById('loading').style.display = 'flex';
+                document.getElementById('errorMessage').style.display = 'none';
 
-        // 물 월별 탄소 배출량 차트
-        const waterCtx = document.getElementById('waterEmissions').getContext('2d');
-        const waterChart = new Chart(waterCtx, {
-            type: 'line',
-            data: {
-                labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
-                datasets: [{
-                    label: '월별 탄소배출량 (tCO₂eq)',
-                    data: [60, 75, 80, 55, 70, 55, 30, 30, 60, 75, 85, 90],
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    fill: true,
-                    tension: 0.3
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        min: 20
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                }
-            }
-        });
+                const [wasteTotal, waterTotal, greeneryData, vehicleTotal, powerTotal] = await Promise.all([
+                    loadWasteData(),
+                    loadWaterData(),
+                    loadGreeneryData(),
+                    loadVehicleData(),
+                    loadPowerData()
+                ]);
 
-        // 녹지 흡수량 차트
-        const greeneryCtx = document.getElementById('greeneryAbsorption').getContext('2d');
-        const greeneryChart = new Chart(greeneryCtx, {
-            type: 'bar',
-            data: {
-                labels: ['수관면적', '비수관면적'],
-                datasets: [{
-                    label: '흡수량 (tCO₂/년)',
-                    data: [1000, 800],
-                    backgroundColor: ['#10b981', '#059669'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        beginAtZero: true
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                }
-            }
-        });
+                const totals = {
+                    waste: wasteTotal,
+                    water: waterTotal,
+                    vehicle: vehicleTotal,
+                    power: powerTotal
+                };
 
-        // 차량 일별 연료별 탄소 배출량 차트 초기화 (vehicle.html과 동일한 설정)
-        const vehicleCtx = document.getElementById('vehicleEmissionsByFuel').getContext('2d');
-        vehicleEmissionsByFuelChart = new Chart(vehicleCtx, {
-            type: 'bar',
-            data: {
-                labels: [],
-                datasets: [
-                    {
-                        label: '휘발유',
-                        data: [],
-                        backgroundColor: '#ef4444'
-                    },
-                    {
-                        label: '경유',
-                        data: [],
-                        backgroundColor: '#1f2937'
-                    },
-                    {
-                        label: 'LPG',
-                        data: [],
-                        backgroundColor: '#f59e0b'
-                    },
-                    {
-                        label: '전기',
-                        data: [],
-                        backgroundColor: '#10b981'
-                    },
-                    {
-                        label: '하이브리드',
-                        data: [],
-                        backgroundColor: '#60a5fa'
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        stacked: true
-                    },
-                    y: {
-                        stacked: true,
-                        beginAtZero: true
-                    }
-                },
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
+                updateSummary(totals, greeneryData);
 
-        // 전력 월별 탄소 배출량 차트
-        const powerCtx = document.getElementById('powerEmissions').getContext('2d');
-        const powerChart = new Chart(powerCtx, {
-            type: 'line',
-            data: {
-                labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
-                datasets: [{
-                    label: '전력 탄소배출량 (tCO₂eq)',
-                    data: [1570, 1450, 1620, 1690, 1750, 1820, 1200, 1150, 1580, 1650, 1700, 1570],
-                    borderColor: '#f59e0b',
-                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                    fill: true,
-                    tension: 0.3
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        min: 1000
-                    }
-                },
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
+            } catch (err) {
+                document.getElementById('errorText').textContent = '데이터를 불러오는 중 오류가 발생했습니다.';
+                document.getElementById('errorMessage').style.display = 'block';
+                console.error('전체 데이터 로드 오류:', err);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
             }
-        });
+        }
 
-        // 페이지 로드 시 차량 데이터 불러오기
+        // 초기화
         document.addEventListener('DOMContentLoaded', () => {
-            loadVehicleData();
+            initCharts();
+            loadAllData();
+            
+            document.getElementById('refreshBtn').addEventListener('click', loadAllData);
         });
     </script>
 </body>

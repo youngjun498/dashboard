@@ -250,7 +250,7 @@
 
         <!-- 차트 컨테이너 -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <!-- 월별 물 사용 추이 차트 -->
+            <!-- 월별 물 사용 추이 차트 (막대그래프로 변경) -->
             <div class="card">
                 <h3 class="text-lg font-semibold mb-4">월별 물 사용 추이</h3>
                 <div class="h-64">
@@ -258,7 +258,7 @@
                 </div>
             </div>
             
-            <!-- 월별 탄소 배출량 차트 -->
+            <!-- 월별 탄소 배출량 차트 (라인차트 유지) -->
             <div class="card">
                 <h3 class="text-lg font-semibold mb-4">월별 탄소 배출량</h3>
                 <div class="h-64">
@@ -272,19 +272,20 @@
         let monthlyWaterUsageChart, monthlyCarbonEmissionsChart;
 
         function initCharts() {
-            // 월별 물 사용 추이 차트
+            // 월별 물 사용 추이 차트 (막대그래프로 변경)
             const waterUsageCtx = document.getElementById('monthlyWaterUsage').getContext('2d');
             monthlyWaterUsageChart = new Chart(waterUsageCtx, {
-                type: 'line',
+                type: 'bar', // line에서 bar로 변경
                 data: {
                     labels: [],
                     datasets: [{
                         label: '월별 물 사용량(L)',
                         data: [],
+                        backgroundColor: 'rgba(59, 130, 246, 0.8)', // 막대 색상
                         borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        fill: true,
-                        tension: 0.4
+                        borderWidth: 2,
+                        borderRadius: 4, // 막대 모서리 둥글게
+                        borderSkipped: false,
                     }]
                 },
                 options: {
@@ -297,6 +298,15 @@
                                 callback: function(value) {
                                     return value.toLocaleString();
                                 }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)',
+                                borderDash: [2, 2]
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
                             }
                         }
                     },
@@ -306,17 +316,30 @@
                             position: 'bottom'
                         },
                         tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleFont: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            padding: 12,
                             callbacks: {
                                 label: function(context) {
                                     return `${context.dataset.label}: ${context.raw.toLocaleString()}`;
                                 }
                             }
                         }
+                    },
+                    // 막대그래프 hover 효과
+                    onHover: (event, elements) => {
+                        event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
                     }
                 }
             });
 
-            // 월별 탄소 배출량 차트
+            // 월별 탄소 배출량 차트 (라인차트 유지)
             const carbonEmissionsCtx = document.getElementById('monthlyCarbonEmissions').getContext('2d');
             monthlyCarbonEmissionsChart = new Chart(carbonEmissionsCtx, {
                 type: 'line',
@@ -328,7 +351,12 @@
                         borderColor: '#ef4444',
                         backgroundColor: 'rgba(239, 68, 68, 0.1)',
                         fill: true,
-                        tension: 0.4
+                        tension: 0.4,
+                        pointBackgroundColor: '#ef4444',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
                     }]
                 },
                 options: {
@@ -341,6 +369,15 @@
                                 callback: function(value) {
                                     return value.toLocaleString();
                                 }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)',
+                                borderDash: [2, 2]
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
                             }
                         }
                     },
@@ -350,6 +387,15 @@
                             position: 'bottom'
                         },
                         tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleFont: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            padding: 12,
                             callbacks: {
                                 label: function(context) {
                                     return `${context.dataset.label}: ${context.raw.toLocaleString()}`;
@@ -383,7 +429,10 @@
 
         function updateCharts(data) {
             // 날짜와 탄소배출량 추출
-            const dates = data.map(d => d['날짜']);
+            const dates = data.map(d => {
+                const date = new Date(d['날짜']);
+                return `${date.getMonth() + 1}월`;
+            });
             const emissions = data.map(d => d['탄소배출량']);
             
             // 월별 탄소 배출량 차트 업데이트
